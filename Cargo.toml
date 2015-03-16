@@ -1,0 +1,15 @@
+[package]
+
+name = "num_cpus"
+version = "0.1.0"
+authors = ["Sean McArthur <sean.monstar@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/seanmonstar/num_cpus"
+build = "build.rs"
+
+
+[dependencies]
+libc = "*"
+
+[build-dependencies]
+gcc = "*"
