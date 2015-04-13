@@ -62,10 +62,19 @@ fn get_num_cpus() -> usize {
     cpus as usize
 }
 
-#[cfg(unix)]
+#[cfg(target_os= "linux")]
 fn get_num_cpus() -> usize {
+    //to-do: replace with libc::_SC_NPROCESSORS_ONLN once available
     unsafe {
-        libc::sysconf(84  /*libc::_SC_NPROCESSORS_ONLN*/) as usize
+        libc::sysconf(84) as usize
+    }
+}
+
+#[cfg(target_os="macos")]
+fn get_num_cpus() -> usize {
+    //to-do: replace with libc::_SC_NPROCESSORS_ONLN once available
+    unsafe {
+        libc::sysconf(58) as usize
     }
 }
 
