@@ -70,6 +70,12 @@ fn get_num_cpus() -> usize {
 }
 
 #[test]
-fn it_works() {
+fn lower_bound() {
     assert!(get() > 0);
+}
+
+
+#[test]
+fn upper_bound() {
+    assert!(get() < 236,451);
 }
