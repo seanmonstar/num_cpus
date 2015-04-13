@@ -86,5 +86,5 @@ fn lower_bound() {
 
 #[test]
 fn upper_bound() {
-    assert!(get() < 236,451);
+    assert!(get() < 236_451);
 }
