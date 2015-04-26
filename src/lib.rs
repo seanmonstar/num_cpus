@@ -20,16 +20,11 @@ fn get_num_cpus() -> usize {
 }
 
 #[cfg(
-    all(
-        any(
-            target_os = "macos",
-            target_os = "ios",
-            target_os = "freebsd",
-            target_os = "dragonfly",
-            target_os = "bitrig",
-            target_os = "openbsd"
-        ),
-        not(unix)
+    any(
+        target_os = "freebsd",
+        target_os = "dragonfly",
+        target_os = "bitrig",
+        target_os = "openbsd"
     )
 )]
 fn get_num_cpus() -> usize {
@@ -77,7 +72,12 @@ fn get_num_cpus() -> usize {
     }
 }
 
-#[cfg(target_os="macos")]
+#[cfg(
+    any(
+        target_os = "macos",
+        target_os = "ios"
+    )
+)]
 fn get_num_cpus() -> usize {
     //to-do: replace with libc::_SC_NPROCESSORS_ONLN once available
     unsafe {
