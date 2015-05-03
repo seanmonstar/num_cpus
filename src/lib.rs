@@ -64,6 +64,15 @@ fn get_num_cpus() -> usize {
         libc::sysconf(84) as usize
     }
 }
+
+#[cfg(target_os= "android")]
+fn get_num_cpus() -> usize {
+    //to-do: replace with libc::_SC_NPROCESSORS_ONLN once available
+    unsafe {
+        libc::sysconf(97) as usize
+    }
+}
+
 #[cfg(target_os = "nacl")]
 fn get_num_cpus() -> usize {
     //to-do: replace with libc::_SC_NPROCESSORS_ONLN once available
