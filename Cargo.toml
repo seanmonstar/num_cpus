@@ -9,4 +9,4 @@ repository = "https://github.com/seanmonstar/num_cpus"
 
 
 [dependencies]
-libc = "*"
+libc = "0.1.7"
