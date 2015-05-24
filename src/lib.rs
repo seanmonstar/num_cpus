@@ -30,6 +30,7 @@ fn get_num_cpus() -> usize {
 fn get_num_cpus() -> usize {
     use libc::{c_int, c_uint};
     use libc::funcs::bsd44::sysctl;
+    use std::ptr;
 
     //XXX: uplift to libc?
     const CTL_HW: c_int = 6;
@@ -41,13 +42,17 @@ fn get_num_cpus() -> usize {
     let mut mib: [c_int; 4] = [CTL_HW, HW_AVAILCPU, 0, 0];
 
     unsafe {
-        sysctl(mib.as_mut_ptr(), 2, &mut cpus, &mut CPUS_SIZE, &mut (), 0);
+        sysctl(mib.as_mut_ptr(), 2,
+               &mut cpus as *mut _ as *mut _, &mut CPUS_SIZE as *mut _ as *mut _,
+               ptr::null_mut(), 0);
     }
 
     if cpus < 1 {
         mib[1] = HW_NCPU;
         unsafe {
-            sysctl(mib.as_mut_ptr(), 2, &mut cpus, &mut CPUS_SIZE, &mut (), 0);
+            sysctl(mib.as_mut_ptr(), 2,
+                   &mut cpus as *mut _ as *mut _, &mut CPUS_SIZE as *mut _ as *mut _,
+                   ptr::null_mut(), 0);
         }
         if cpus < 1 {
             cpus = 1;
