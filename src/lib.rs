@@ -24,7 +24,8 @@ fn get_num_cpus() -> usize {
         target_os = "freebsd",
         target_os = "dragonfly",
         target_os = "bitrig",
-        target_os = "openbsd"
+        target_os = "openbsd",
+        target_os = "netbsd"
     )
 )]
 fn get_num_cpus() -> usize {
