@@ -8,7 +8,7 @@ Add to Cargo.toml:
 
 ```
 [dependencies]
-num_cpus = "*"
+num_cpus = "0.2"
 ```
 
 In your `main.rs` or `lib.rs`:
