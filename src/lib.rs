@@ -3,6 +3,10 @@
 #![deny(missing_docs)]
 
 extern crate libc;
+#[cfg(windows)]
+extern crate winapi;
+#[cfg(windows)]
+extern crate kernel32;
 
 /// Returns the number of CPUs of the current machine.
 #[inline]
@@ -13,8 +17,8 @@ pub fn get() -> usize {
 #[cfg(windows)]
 fn get_num_cpus() -> usize {
     unsafe {
-        let mut sysinfo: libc::SYSTEM_INFO = ::std::mem::uninitialized();
-        libc::GetSystemInfo(&mut sysinfo);
+        let mut sysinfo: winapi::SYSTEM_INFO = ::std::mem::uninitialized();
+        kernel32::GetSystemInfo(&mut sysinfo);
         sysinfo.dwNumberOfProcessors as usize
     }
 }
