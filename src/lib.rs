@@ -1,6 +1,7 @@
 //! Replaces the deprecated functionality of std::os::num_cpus.
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
+#![allow(non_snake_case)]
 
 extern crate libc;
 #[cfg(windows)]
@@ -34,7 +35,7 @@ fn get_num_cpus() -> usize {
 )]
 fn get_num_cpus() -> usize {
     use libc::{c_int, c_uint};
-    use libc::funcs::bsd44::sysctl;
+    use libc::sysctl;
     use std::ptr;
 
     //XXX: uplift to libc?
