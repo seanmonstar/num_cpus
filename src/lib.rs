@@ -99,14 +99,15 @@ pub fn get_physical() -> usize {
 
 #[cfg(target_os="macos")]
 fn get_physical_num_cpus() -> usize {
-    use std::ffi::CString;
     use libc::size_t;
     use libc::sysctlbyname;
     use std::ptr;
     use libc::c_void;
 
+    static HW_PHYSICALCPU: &'static [i8] = &[104i8, 119, 46, 112, 104, 121, 115, 105, 99, 97, 108, 99, 112, 117, 0];
+
     unsafe {
-        let name = CString::new("hw.physicalcpu").unwrap().as_ptr();
+        let name = HW_PHYSICALCPU.as_ptr();
         let mut count = 0;
         let mut count_len = ::std::mem::size_of::<size_t>();
         sysctlbyname(name, &mut count as *mut _ as *mut c_void, &mut count_len as *mut _, ptr::null_mut(), 0);
