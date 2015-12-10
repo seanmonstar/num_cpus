@@ -91,6 +91,7 @@ fn get_num_cpus() -> usize {
 }
 
 /// Returns the number of physical CPUs of the current machine.
+/// Currently only Mac OSX is supported.
 #[inline]
 pub fn get_physical() -> usize {
     get_physical_num_cpus()
@@ -111,11 +112,6 @@ fn get_physical_num_cpus() -> usize {
         sysctlbyname(name, &mut count as *mut _ as *mut c_void, &mut count_len as *mut _, ptr::null_mut(), 0);
         count as usize
     }
-}
-
-#[cfg(not(target_os="macos"))]
-fn get_physical_num_cpus() -> usize {
-    panic!("Platform not supported, yet!")
 }
 
 #[test]
