@@ -3,11 +3,8 @@
 #![deny(missing_docs)]
 #![allow(non_snake_case)]
 
+#[cfg(not(windows))]
 extern crate libc;
-#[cfg(windows)]
-extern crate winapi;
-#[cfg(windows)]
-extern crate kernel32;
 
 /// Returns the number of CPUs of the current machine.
 #[inline]
@@ -17,9 +14,28 @@ pub fn get() -> usize {
 
 #[cfg(windows)]
 fn get_num_cpus() -> usize {
+    #[repr(C)]
+    struct SYSTEM_INFO {
+        wProcessorArchitecture: u16,
+        wReserved: u16,
+        dwPageSize: u32,
+        lpMinimumApplicationAddress: *mut u8,
+        lpMaximumApplicationAddress: *mut u8,
+        dwActiveProcessorMask: *mut u8,
+        dwNumberOfProcessors: u32,
+        dwProcessorType: u32,
+        dwAllocationGranularity: u32,
+        wProcessorLevel: u16,
+        wProcessorRevision: u16,
+    }
+
+    extern "system" {
+        fn GetSystemInfo(lpSystemInfo: *mut SYSTEM_INFO);
+    }
+
     unsafe {
-        let mut sysinfo: winapi::SYSTEM_INFO = ::std::mem::uninitialized();
-        kernel32::GetSystemInfo(&mut sysinfo);
+        let mut sysinfo: SYSTEM_INFO = std::mem::uninitialized();
+        GetSystemInfo(&mut sysinfo);
         sysinfo.dwNumberOfProcessors as usize
     }
 }
