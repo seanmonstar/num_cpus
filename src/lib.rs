@@ -89,20 +89,13 @@ fn get_num_cpus() -> usize {
         target_os = "linux",
         target_os = "nacl",
         target_os = "macos",
-        target_os = "ios"
+        target_os = "ios",
+        target_os = "android",
     )
 )]
 fn get_num_cpus() -> usize {
     unsafe {
         libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize
-    }
-}
-
-#[cfg(target_os= "android")]
-fn get_num_cpus() -> usize {
-    //to-do: replace with libc::_SC_NPROCESSORS_ONLN once available
-    unsafe {
-        libc::sysconf(97) as usize
     }
 }
 
