@@ -40,47 +40,51 @@ fn get_num_cpus() -> usize {
     }
 }
 
-#[cfg(
-    any(
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        target_os = "bitrig",
-        target_os = "openbsd",
-        target_os = "netbsd"
-    )
-)]
+#[cfg(any(target_os = "freebsd",
+          target_os = "dragonfly",
+          target_os = "bitrig",
+          target_os = "netbsd"))]
 fn get_num_cpus() -> usize {
-    use libc::{c_int, c_uint};
-    use libc::sysctl;
-    use std::ptr;
-
-    //XXX: uplift to libc?
-    const CTL_HW: c_int = 6;
-    const HW_AVAILCPU: c_int = 25;
-    const HW_NCPU: c_int = 3;
-
-    let mut cpus: c_uint = 0;
-    let mut CPUS_SIZE = ::std::mem::size_of::<c_uint>();
-    let mut mib: [c_int; 4] = [CTL_HW, HW_AVAILCPU, 0, 0];
+    let mut cpus: libc::c_uint = 0;
+    let mut cpus_size = std::mem::size_of_val(&cpus);
 
     unsafe {
-        sysctl(mib.as_mut_ptr(), 2,
-               &mut cpus as *mut _ as *mut _, &mut CPUS_SIZE as *mut _ as *mut _,
-               ptr::null_mut(), 0);
+        cpus = libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as libc::c_uint;
     }
-
     if cpus < 1 {
-        mib[1] = HW_NCPU;
+        let mut mib = [libc::CTL_HW, libc::HW_NCPU, 0, 0];
         unsafe {
-            sysctl(mib.as_mut_ptr(), 2,
-                   &mut cpus as *mut _ as *mut _, &mut CPUS_SIZE as *mut _ as *mut _,
-                   ptr::null_mut(), 0);
+            libc::sysctl(mib.as_mut_ptr(),
+                         2,
+                         &mut cpus as *mut _ as *mut _,
+                         &mut cpus_size as *mut _ as *mut _,
+                         0 as *mut _,
+                         0);
         }
         if cpus < 1 {
             cpus = 1;
         }
     }
+    cpus as usize
+}
 
+#[cfg(target_os = "openbsd")]
+fn get_num_cpus() -> usize {
+    let mut cpus: libc::c_uint = 0;
+    let mut cpus_size = std::mem::size_of_val(&cpus);
+    let mut mib = [libc::CTL_HW, libc::HW_NCPU, 0, 0];
+
+    unsafe {
+        libc::sysctl(mib.as_mut_ptr(),
+                     2,
+                     &mut cpus as *mut _ as *mut _,
+                     &mut cpus_size as *mut _ as *mut _,
+                     0 as *mut _,
+                     0);
+    }
+    if cpus < 1 {
+        cpus = 1;
+    }
     cpus as usize
 }
 
