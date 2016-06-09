@@ -95,6 +95,7 @@ fn get_num_cpus() -> usize {
         target_os = "macos",
         target_os = "ios",
         target_os = "android",
+        target_os = "solaris",
     )
 )]
 fn get_num_cpus() -> usize {
