@@ -1,5 +1,7 @@
 # num_cpus
 
+[![crates.io](http://meritbadge.herokuapp.com/num_cpus)](https://crates.io/crates/num_cpus)
+
 A replacement for the deprecated `std::os::num_cpus`.
 
 ## Usage
@@ -8,7 +10,7 @@ Add to Cargo.toml:
 
 ```
 [dependencies]
-num_cpus = "0.2"
+num_cpus = "1.0"
 ```
 
 In your `main.rs` or `lib.rs`:
