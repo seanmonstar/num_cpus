@@ -12,6 +12,34 @@ pub fn get() -> usize {
     get_num_cpus()
 }
 
+use std::io::BufReader;
+use std::io::BufRead;
+use std::fs::File;
+use std::collections::HashMap;
+/// Returns the number of physical cores of the current machine.
+/// If not possible on the particular architecture returns same as get() which
+/// is the logical CPUs.
+pub fn get_physical() -> usize {
+    let file = match File::open("/proc/cpuinfo") {
+      Ok(val) => val,
+      Err(_) => {return get_num_cpus()},
+    };
+    let reader = BufReader::new(file);
+    let mut map = HashMap::new();
+    for line in reader.lines().filter_map(|result| result.ok()) {
+        let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
+        if parts.len() != 2 {
+          continue
+        }
+        if parts[0] == "core id" {
+          map.insert(parts[1].to_string(), true);
+        }
+    }
+    let count = map.len();
+    if count == 0 { get_num_cpus() } else { count }
+}
+
+
 #[cfg(windows)]
 fn get_num_cpus() -> usize {
     #[repr(C)]
