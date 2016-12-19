@@ -30,28 +30,62 @@ fn get_num_physical_cpus() -> usize {
 
 #[cfg(target_os = "linux")]
 fn get_num_physical_cpus() -> usize {
-    use std::io::BufReader;
-    use std::io::BufRead;
-    use std::fs::File;
-    use std::collections::HashMap;
+    return read_cpuinfo().unwrap_or_else(|()| get_num_cpus());
 
-    let file = match File::open("/proc/cpuinfo") {
-        Ok(val) => val,
-        Err(_) => {return get_num_cpus()},
-    };
-    let reader = BufReader::new(file);
-    let mut map = HashMap::new();
-    for line in reader.lines().filter_map(|result| result.ok()) {
-        let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
-        if parts.len() != 2 {
-            continue
-        }
-        if parts[0] == "core id" {
-            map.insert(parts[1].to_string(), true);
+    // Like try!(), but always map the error to ()
+    macro_rules! try_ {
+        ($e:expr) => {
+            try!($e.map_err(|_| ()))
         }
     }
-    let count = map.len();
-    if count == 0 { get_num_cpus() } else { count }
+
+    fn read_cpuinfo() -> Result<usize, ()> {
+        use std::fs::File;
+        use std::io::BufReader;
+        use std::io::BufRead;
+
+        let file = try_!(File::open("/proc/cpuinfo"));
+        let mut reader = BufReader::new(file);
+        let mut line = String::new();
+        // vector of physical id, core id pairs
+        let mut cores = Vec::new();
+        let mut cur_physical = 0;
+        loop {
+            line.clear();
+            try_!(reader.read_line(&mut line));
+            if line.is_empty() {
+                break;
+            }
+            let mut parts = line.split(':').map(|s| s.trim());
+
+            // assumption: physical id is listed before core id, if it is present.
+            match parts.next() {
+                Some("physical id") => {
+                    if let Some(id) = parts.next() {
+                        cur_physical = try_!(id.parse::<u32>());
+                    }
+                }
+                Some("core id") => {
+                    let id = try!(parts.next().ok_or(()));
+                    let core_id = try_!(id.parse::<u32>());
+
+                    // insert the tuple in sorted order
+                    let t = (cur_physical, core_id);
+                    match cores.binary_search(&t) {
+                        Ok(_) => { }
+                        Err(i) => cores.insert(i, t),
+                    }
+                }
+                Some(_) | None => { }
+            }
+        }
+        let count = cores.len();
+        if count == 0 {
+            Err(())
+        } else {
+            Ok(count)
+        }
+    }
 }
 
 #[cfg(windows)]
