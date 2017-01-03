@@ -40,17 +40,17 @@ fn get_num_physical_cpus() -> usize {
         Err(_) => {return get_num_cpus()},
     };
     let reader = BufReader::new(file);
-    let mut map = HashMap::new();
+    let mut cpu_set = HashSet::new();
     for line in reader.lines().filter_map(|result| result.ok()) {
         let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
         if parts.len() != 2 {
             continue
         }
         if parts[0] == "core id" {
-            map.insert(parts[1].to_string(), true);
+            cpu_set.insert(parts[1]);
         }
     }
-    let count = map.len();
+    let count = cpu_set.len();
     if count == 0 { get_num_cpus() } else { count }
 }
 
