@@ -162,7 +162,7 @@ fn get_num_cpus() -> usize {
         libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize
     }
 }
-#[cfg(target_os = "emscripten")]
+#[cfg(any(target_os = "emscripten", target_os = "redox"))]
 fn get_num_cpus() -> usize {
     1
 }
