@@ -8,7 +8,7 @@ A replacement for the deprecated `std::os::num_cpus`.
 
 Add to Cargo.toml:
 
-```
+```toml
 [dependencies]
 num_cpus = "1.0"
 ```
