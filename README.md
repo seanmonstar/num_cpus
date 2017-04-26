@@ -2,7 +2,7 @@
 
 [![crates.io](http://meritbadge.herokuapp.com/num_cpus)](https://crates.io/crates/num_cpus)
 
-A replacement for the deprecated `std::os::num_cpus`.
+Count the number of CPUs on the current machine.
 
 ## Usage
 
