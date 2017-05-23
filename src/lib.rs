@@ -146,53 +146,12 @@ fn get_num_cpus() -> usize {
     cpus as usize
 }
 
-#[cfg(feature = "nightly")]
-#[feature(asm, naked_functions)]
-#[naked]
-#[inline(always)]
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn popcnt(bits: u64) -> u64 {
-    let ret: u64;
-    unsafe {
-        asm!("popcntq %rdi, %rax"
-             : "={rax}"(ret)
-             : "{rdi}"(bits)
-        );
-    };
-    ret
-}
-
-#[cfg(not(feature = "nightly"))]
-#[inline(always)]
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn popcnt(n: u64) -> u64 {
-    let mut c: u64 = (n & 0x5555555555555555) + ((n >> 1) & 0x5555555555555555);
-    c = (c & 0x3333333333333333) + ((c >> 2) & 0x3333333333333333);
-    c = (c & 0x0f0f0f0f0f0f0f0f) + ((c >> 4) & 0x0f0f0f0f0f0f0f0f);
-    c = (c & 0x00ff00ff00ff00ff) + ((c >> 8) & 0x00ff00ff00ff00ff);
-    c = (c & 0x0000ffff0000ffff) + ((c >> 16) & 0x0000ffff0000ffff);
-    c = (c & 0x00000000ffffffff) + ((c >> 32) & 0x00000000ffffffff);
-    c
-}
-
-#[inline(always)]
-#[cfg(all(target_os = "linux", not(target_arch = "x86_64")))]
-fn popcnt(n: u64) -> u64 {
-    let mut c: u64 = (n & 0x5555555555555555) + ((n >> 1) & 0x5555555555555555);
-    c = (c & 0x3333333333333333) + ((c >> 2) & 0x3333333333333333);
-    c = (c & 0x0f0f0f0f0f0f0f0f) + ((c >> 4) & 0x0f0f0f0f0f0f0f0f);
-    c = (c & 0x00ff00ff00ff00ff) + ((c >> 8) & 0x00ff00ff00ff00ff);
-    c = (c & 0x0000ffff0000ffff) + ((c >> 16) & 0x0000ffff0000ffff);
-    c = (c & 0x00000000ffffffff) + ((c >> 32) & 0x00000000ffffffff);
-    c
-}
-
 #[cfg(target_os = "linux")]
 fn get_num_cpus() -> usize {
     let mut set:  libc::cpu_set_t = unsafe { std::mem::zeroed() };
     if unsafe { libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &mut set) } == 0 {
         let ptr = unsafe { std::mem::transmute::<&libc::cpu_set_t, &u64>(&set) };
-        popcnt(*ptr) as usize
+        (*ptr).count_ones() as usize
     } else {
         unsafe {
             libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize
