@@ -150,8 +150,13 @@ fn get_num_cpus() -> usize {
 fn get_num_cpus() -> usize {
     let mut set:  libc::cpu_set_t = unsafe { std::mem::zeroed() };
     if unsafe { libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &mut set) } == 0 {
-        let ptr = unsafe { std::mem::transmute::<&libc::cpu_set_t, &u64>(&set) };
-        (*ptr).count_ones() as usize
+        let mut count: u32 = 0;
+        for i in 0..libc::CPU_SETSIZE as usize {
+            if unsafe { libc::CPU_ISSET(i, &set) } {
+                count += 1
+            }
+        }
+        count as usize
     } else {
         unsafe {
             libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize
