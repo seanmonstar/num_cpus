@@ -146,16 +146,31 @@ fn get_num_cpus() -> usize {
     cpus as usize
 }
 
-#[cfg(
-    any(
-        target_os = "linux",
-        target_os = "nacl",
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "android",
-        target_os = "solaris",
-        target_os = "fuchsia",
-    )
+#[cfg(target_os = "linux")]
+fn get_num_cpus() -> usize {
+    let mut set:  libc::cpu_set_t = unsafe { std::mem::zeroed() };
+    if unsafe { libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &mut set) } == 0 {
+        let mut count: u32 = 0;
+        for i in 0..libc::CPU_SETSIZE as usize {
+            if unsafe { libc::CPU_ISSET(i, &set) } {
+                count += 1
+            }
+        }
+        count as usize
+    } else {
+        unsafe {
+            libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize
+        }
+    }
+}
+
+#[cfg(any(
+    target_os = "nacl",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "solaris",
+    target_os = "fuchsia")
 )]
 fn get_num_cpus() -> usize {
     unsafe {
