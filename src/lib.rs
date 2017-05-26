@@ -1,4 +1,13 @@
-//! Replaces the deprecated functionality of std::os::num_cpus.
+//! # num_cpus
+//!
+//! A crate with utilities to determine the number of CPUs available on the
+//! current system.
+//!
+//! ## Example
+//!
+//! ```
+//! let cpus = num_cpus::get();
+//! ```
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
 #![allow(non_snake_case)]
@@ -6,15 +15,20 @@
 #[cfg(not(windows))]
 extern crate libc;
 
-/// Returns the number of CPUs of the current machine.
+/// Returns the number of available CPUs of the current system.
+///
+/// # Note
+///
+/// This will check sched affinity on Linux.
 #[inline]
 pub fn get() -> usize {
     get_num_cpus()
 }
 
-/// Returns the number of physical cores of the current machine.
-/// If not possible on the particular architecture returns same as get() which
-/// is the logical CPUs.
+/// Returns the number of physical cores of the current system.
+///
+/// If not possible on the particular architecture, returns same as `get()`
+/// which is the logical CPUs.
 #[inline]
 pub fn get_physical() -> usize {
     get_num_physical_cpus()
