@@ -172,8 +172,11 @@ fn get_num_cpus() -> usize {
         }
         count as usize
     } else {
-        unsafe {
-            libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize
+        let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+        if cpus < 1 {
+            1
+        } else {
+            cpus as usize
         }
     }
 }
@@ -187,10 +190,14 @@ fn get_num_cpus() -> usize {
     target_os = "fuchsia")
 )]
 fn get_num_cpus() -> usize {
-    unsafe {
-        libc::sysconf(libc::_SC_NPROCESSORS_ONLN) as usize
+    let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+    if cpus < 1 {
+        1
+    } else {
+        cpus as usize
     }
 }
+
 #[cfg(any(target_os = "emscripten", target_os = "redox", target_os = "haiku"))]
 fn get_num_cpus() -> usize {
     1
