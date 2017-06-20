@@ -286,15 +286,31 @@ fn get_num_cpus() -> usize {
     1
 }
 
-#[test]
-fn lower_bound() {
-    assert!(get() > 0);
-    assert!(get_physical() > 0);
-}
+#[cfg(test)]
+mod tests {
+    fn env_var(name: &'static str) -> Option<usize> {
+        ::std::env::var(name).ok().map(|val| val.parse().unwrap())
+    }
 
+    #[test]
+    fn test_get() {
+        let num = super::get();
+        if let Some(n) = env_var("NUM_CPUS_TEST_GET") {
+            assert_eq!(num, n);
+        } else {
+            assert!(num > 0);
+            assert!(num < 236_451);
+        }
+    }
 
-#[test]
-fn upper_bound() {
-    assert!(get() < 236_451);
-    assert!(get_physical() < 236_451);
+    #[test]
+    fn test_get_physical() {
+        let num = super::get_physical();
+        if let Some(n) = env_var("NUM_CPUS_TEST_GET_PHYSICAL") {
+            assert_eq!(num, n);
+        } else {
+            assert!(num > 0);
+            assert!(num < 236_451);
+        }
+    }
 }
