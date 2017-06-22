@@ -273,7 +273,7 @@ fn get_num_cpus() -> usize {
     target_os = "fuchsia")
 )]
 fn get_num_cpus() -> usize {
-    let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+    let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_CONF) };
     if cpus < 1 {
         1
     } else {
