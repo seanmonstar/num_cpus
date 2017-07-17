@@ -9,7 +9,8 @@ sudo: false
 cache: cargo
 
 install:
-  - rustup target add $TARGET
+  - echo "$TARGET"
+  - rustup target add "$TARGET"
 
 script:
   - cargo build --verbose --target $TARGET
