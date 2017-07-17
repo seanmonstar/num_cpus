@@ -4,6 +4,10 @@ rust:
   - beta
   - nightly
 
+os:
+  - linux
+  - osx
+
 sudo: false
 
 cache:
