@@ -4,21 +4,42 @@ rust:
   - beta
   - nightly
 
-os:
-  - linux
-  - osx
-
 sudo: false
 
-cache:
-  apt: true
-  directories:
-    - target/debug/deps
-    - target/debug/build
+cache: cargo
+
+install:
+  - rustup target add $TARGET
 
 script:
-  - cargo build --verbose
-  - cargo test --verbose
+  - cargo build --verbose --target $TARGET
+  # Only run the targets if we are on the same OS.
+  - if [ -z "$RUN" ] cargo test --verbose --target $TARGET; fi
+
+matrix:
+  include:
+    # Linux
+    - env: TARGET=i686-unknown-linux-gnu RUN=1
+    - env: TARGET=x86_64-unknown-linux-gnu RUN=1
+    # Mac OS X
+    - os: osx
+      env: TARGET=i686-apple-darwin RUN=1
+    - os: osx
+      env: TARGET=x86_64-apple-darwin RUN=1
+    # Android
+    # - for x86
+    - env: TARGET=i686-linux-android
+    - env: TARGET=x86_64-linux-android
+    # - for ARM
+    - env: TARGET=arm-linux-androideabi
+    - env: TARGET=aarch64-linux-android
+    # IOS
+    - os: osx
+      osx_image: xcode9
+      env: TARGET=i386-apple-ios
+    - os: osx
+      osx_image: xcode9
+      env: TARGET=x86_64-apple-ios
 
 notifications:
   email: false
