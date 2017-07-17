@@ -13,9 +13,9 @@ install:
   - rustup target add "$TARGET"
 
 script:
-  - cargo build --verbose --target $TARGET
+  - cargo build --verbose --target "$TARGET"
   # Only run the targets if we are on the same OS.
-  - if [ -z "$RUN" ] cargo test --verbose --target $TARGET; fi
+  - if [ -z "$RUN" ] cargo test --verbose --target "$TARGET"; fi
 
 matrix:
   include:
