@@ -40,6 +40,9 @@ matrix:
     - os: osx
       osx_image: xcode9
       env: TARGET=x86_64-apple-ios
+    # BSD derivatives.
+    - env: TARGET=x86_64-unknown-freebsd
+    - env: TARGET=x86_64-unknown-openbsd
 
 notifications:
   email: false
