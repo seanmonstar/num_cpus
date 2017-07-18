@@ -5,7 +5,6 @@ sudo: false
 
 cache: cargo
 
-# Override the default Travis script.
 install:
   - if [ -z "$NO_ADD" ]; then rustup target add "$TARGET"; fi
 
@@ -25,8 +24,7 @@ matrix:
             - gcc-multilib
     # 64-bit nightly.
     - env: TARGET=x86_64-unknown-linux-gnu RUN=1 NO_ADD=1
-      rust:
-      - nightly
+      rust: nightly
     # Mac OS X
     - os: osx
       env: TARGET=i686-apple-darwin RUN=1
