@@ -1,15 +1,13 @@
 language: rust
-rust:
-  - stable
-  - beta
-  - nightly
 
 dist: trusty
 sudo: false
 
 cache: cargo
 
-rustup-install:
+# Override the default Travis script.
+install:
+  - if [ -z "$TRAVIS_RUST_VERSION" ]; then TRAVIS_RUST_VERSION="stable"; fi
   - curl -sSf https://build.travis-ci.org/files/rustup-init.sh | sh -s -- --default-host=$TARGET --default-toolchain=$TRAVIS_RUST_VERSION -y
 
 script:
@@ -28,6 +26,10 @@ matrix:
             - gcc-multilib
     # 64-bit works as-is.
     - env: TARGET=x86_64-unknown-linux-gnu RUN=1
+      rust:
+      - stable
+      - beta
+      - nightly
     # Mac OS X
     - os: osx
       env: TARGET=i686-apple-darwin RUN=1
