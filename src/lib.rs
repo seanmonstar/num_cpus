@@ -15,6 +15,7 @@
 #[cfg(not(windows))]
 extern crate libc;
 
+
 /// Returns the number of available CPUs of the current system.
 ///
 /// # Note
@@ -35,7 +36,7 @@ pub fn get_physical() -> usize {
 }
 
 
-#[cfg(not(any(target_os = "linux", target_os = "windows")))]
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os="macos")))]
 #[inline]
 fn get_num_physical_cpus() -> usize {
     // Not implemented, fallback
@@ -243,6 +244,30 @@ fn get_num_cpus() -> usize {
     cpus as usize
 }
 
+
+#[cfg(target_os = "macos")]
+fn get_num_physical_cpus() -> usize {
+    use std::ffi::CStr;
+    use std::ptr;
+
+    let mut cpus: i32 = 0;
+    let mut cpus_size = std::mem::size_of_val(&cpus);
+
+    let sysctl_name = CStr::from_bytes_with_nul(b"hw.physicalcpu\0")
+        .expect("byte literal is missing NUL");
+
+    unsafe {
+        if 0 != libc::sysctlbyname(sysctl_name.as_ptr(),
+                                   &mut cpus as *mut _ as *mut _,
+                                   &mut cpus_size as *mut _ as *mut _,
+                                   ptr::null_mut(),
+                                   0) {
+            return get_num_cpus();
+        }
+    }
+    cpus as usize
+}
+
 #[cfg(target_os = "linux")]
 fn get_num_cpus() -> usize {
     let mut set:  libc::cpu_set_t = unsafe { std::mem::zeroed() };
@@ -312,5 +337,13 @@ mod tests {
             assert!(num > 0);
             assert!(num < 236_451);
         }
+    }
+
+    #[test]
+    fn test_physical_less_logical() {
+        let logical = super::get();
+        let physical = super::get_physical();
+        println!("physical: {:?}, logical: {:?}", physical, logical);
+        assert!(physical <= logical);
     }
 }
