@@ -11,7 +11,7 @@ cache: cargo
 
 install:
   # If no TARGET is set, we are running on Linux, and we are building for stable/beta/nightly Rust.
-  - if [ -z "$TARGET" ]; then TARGET="x86_64-unknown-linux"; fi
+  - if [ -z "$TARGET" ]; then TARGET="x86_64-unknown-linux-gnu"; fi
   - rustup target add "$TARGET"
 
 script:
@@ -21,8 +21,6 @@ script:
 
 matrix:
   include:
-    # Linux (32-bit, 64-bit is already covered above)
-    - env: TARGET=i686-unknown-linux-gnu RUN=1
     # Mac OS X
     - os: osx
       env: TARGET=i686-apple-darwin RUN=1
