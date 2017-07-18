@@ -9,13 +9,14 @@ sudo: false
 
 cache: cargo
 
-install:
+rustup-install:
   - curl -sSf https://build.travis-ci.org/files/rustup-init.sh | sh -s -- --default-host=$TARGET --default-toolchain=$TRAVIS_RUST_VERSION -y
 
 script:
   - cargo build --verbose
   # Only run the targets if we are on the same OS.
-  - if [ "$RUN" == "1" ]; then cargo test --verbose fi
+  - if [ "$RUN" == "1" ]; then cargo test --verbose; fi
+
 matrix:
   include:
     # Linux
