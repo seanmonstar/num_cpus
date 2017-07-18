@@ -4,6 +4,7 @@ rust:
   - beta
   - nightly
 
+dist: trusty
 sudo: false
 
 cache: cargo
