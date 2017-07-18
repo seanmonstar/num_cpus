@@ -16,7 +16,7 @@ install:
 script:
   - cargo build --verbose --target "$TARGET"
   # Only run the targets if we are on the same OS.
-  - if [ "$RUN" == "1" ]; then cargo test --verbose --target "$TARGET"; fi
+  - [ "$RUN" == "1" ] && cargo test --verbose --target "$TARGET"
 
 matrix:
   include:
