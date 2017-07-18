@@ -15,13 +15,12 @@ install:
 script:
   - cargo build --verbose --target "$TARGET"
   # Only run the targets if we are on the same OS.
-  - if [ -z "$RUN" ] cargo test --verbose --target "$TARGET"; fi
+  - if [ -z "$RUN" ]; then cargo test --verbose --target "$TARGET"; fi
 
 matrix:
   include:
-    # Linux
+    # Linux (32-bit, 64-bit is already covered by the `rust ...` setting above)
     - env: TARGET=i686-unknown-linux-gnu RUN=1
-    - env: TARGET=x86_64-unknown-linux-gnu RUN=1
     # Mac OS X
     - os: osx
       env: TARGET=i686-apple-darwin RUN=1
