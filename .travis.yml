@@ -11,7 +11,7 @@ cache: cargo
 
 install:
   # If no TARGET is set, we are running on Linux, and we are building for stable/beta/nightly Rust.
-  - if [ -z "$TARGET" ]; then TARGET="x86_64-unknown-linux-gnu" && RUN="1"; else rustup target add "$TARGET" fi
+  - if [ -z "$TARGET" ]; then TARGET="x86_64-unknown-linux-gnu" && RUN="1"; else rustup target add "$TARGET"; fi
 
 script:
   - cargo build --verbose --target "$TARGET"
@@ -24,7 +24,7 @@ matrix:
     - os: osx
       env: TARGET=i686-apple-darwin RUN=1
     - os: osx
-      env: TARGET=x86_64-apple-darwin RUN=1
+      # No env variables because we are building and running for this architecture.
     # Android
     # - for x86
     - env: TARGET=i686-linux-android
