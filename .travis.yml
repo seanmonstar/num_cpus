@@ -9,17 +9,18 @@ sudo: false
 cache: cargo
 
 install:
-  - echo "$TARGET"
+  # If no TARGET is set, we are running on Linux, and we are building for stable/beta/nightly Rust.
+  - if [ -z "$TARGET" ]; then TARGET="x86_64-unknown-linux"; fi
   - rustup target add "$TARGET"
 
 script:
   - cargo build --verbose --target "$TARGET"
   # Only run the targets if we are on the same OS.
-  - if [ -z "$RUN" ]; then cargo test --verbose --target "$TARGET"; fi
+  - if [ "$RUN" == "1" ]; then cargo test --verbose --target "$TARGET"; fi
 
 matrix:
   include:
-    # Linux (32-bit, 64-bit is already covered by the `rust ...` setting above)
+    # Linux (32-bit, 64-bit is already covered above)
     - env: TARGET=i686-unknown-linux-gnu RUN=1
     # Mac OS X
     - os: osx
