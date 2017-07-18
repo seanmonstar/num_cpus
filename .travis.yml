@@ -22,6 +22,12 @@ matrix:
         apt:
           packages:
             - gcc-multilib
+    # 64-bit stable.
+    - env: TARGET=x86_64-unknown-linux-gnu RUN=1 NO_ADD=1
+      rust: stable
+    # 64-bit beta.
+    - env: TARGET=x86_64-unknown-linux-gnu RUN=1 NO_ADD=1
+      rust: beta
     # 64-bit nightly.
     - env: TARGET=x86_64-unknown-linux-gnu RUN=1 NO_ADD=1
       rust: nightly
