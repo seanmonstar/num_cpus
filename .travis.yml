@@ -10,24 +10,28 @@ sudo: false
 cache: cargo
 
 install:
-  # If no TARGET is set, we are running on Linux, and we are building for stable/beta/nightly Rust.
-  - if [ -z "$TARGET" ]; then
-      TARGET="x86_64-unknown-linux-gnu" && RUN="1";
-    else
-      rustup target add "$TARGET";
-    fi
+  - curl -sSf https://build.travis-ci.org/files/rustup-init.sh | sh -s -- --default-host=$TARGET --default-toolchain=$TRAVIS_RUST_VERSION -y
 
 script:
-  - cargo build --verbose --target "$TARGET"
+  - cargo build --verbose
   # Only run the targets if we are on the same OS.
-  - $RUN && cargo test --verbose --target "$TARGET"
+  - if [ "$RUN" == "1" ]; then cargo test --verbose fi
 matrix:
   include:
+    # Linux
+    # 32-bit requires multilib.
+    - env: TARGET=i686-unknown-linux-gnu RUN=1
+      addons:
+        apt:
+          packages:
+            - gcc-multilib
+    # 64-bit works as-is.
+    - env: TARGET=x86_64-unknown-linux-gnu RUN=1
     # Mac OS X
     - os: osx
       env: TARGET=i686-apple-darwin RUN=1
     - os: osx
-      # No env variables because we are building and running for this architecture.
+      env: TARGET=x86_64-apple-darwin RUN=1
     # Android
     # - for x86
     - env: TARGET=i686-linux-android
@@ -44,7 +48,6 @@ matrix:
       env: TARGET=x86_64-apple-ios
     # BSD derivatives.
     - env: TARGET=x86_64-unknown-freebsd
-    - env: TARGET=x86_64-unknown-openbsd
 
 notifications:
   email: false
