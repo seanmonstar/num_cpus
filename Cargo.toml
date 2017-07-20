@@ -11,4 +11,4 @@ keywords = ["cpu", "cpus", "cores"]
 categories = ["hardware-support"]
 
 [dependencies]
-libc = "^0.2.26"
+libc = "0.2.26"
