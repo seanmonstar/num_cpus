@@ -298,7 +298,14 @@ fn get_num_cpus() -> usize {
     target_os = "fuchsia")
 )]
 fn get_num_cpus() -> usize {
-    let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_CONF) };
+    // On ARM targets, processors could be turned off to save power.
+    // Use `_SC_NPROCESSORS_CONF` to get the real number.
+    #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
+    const CONF_NAME: libc::c_int = _SC_NPROCESSORS_CONF;
+    #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
+    const CONF_NAME: libc::c_int = _SC_NPROCESSORS_ONLN;
+
+    let cpus = unsafe { libc::sysconf(CONF_NAME) };
     if cpus < 1 {
         1
     } else {
