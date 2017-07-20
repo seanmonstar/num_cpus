@@ -55,6 +55,6 @@ matrix:
     # Fuchsia
     - env: TARGET=x86_64-unknown-fuchsia
     # NetBSD
-    - env: TARGET=x86_64-netbsd
+    - env: TARGET=x86_64-unknown-netbsd
     # Emscripten
     - env: TARGET=asmjs-unknown-emscripten
