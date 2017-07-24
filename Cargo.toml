@@ -10,5 +10,9 @@ documentation = "https://docs.rs/num_cpus"
 keywords = ["cpu", "cpus", "cores"]
 categories = ["hardware-support"]
 
+[badges]
+travis-ci = { repository = "seanmonstar/num_cpus" }
+appveyor = { repository = "seanmonstar/num-cpus" }
+
 [dependencies]
 libc = "0.2.26"
