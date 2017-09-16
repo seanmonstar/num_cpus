@@ -13,6 +13,13 @@ script:
   # Only run the targets if we are on the same OS.
   - if [ "$RUN" == "1" ]; then cargo test --verbose --target "$TARGET"; fi
 
+env:
+  global:
+    # Per https://docs.travis-ci.com/user/reference/overview/ -
+    # Travis CI servers make 2 cores available to processes via
+    # virtualization.
+    - EXPECTED_TRAVIS_CPU_COUNT=2
+
 matrix:
   include:
     # Linux
