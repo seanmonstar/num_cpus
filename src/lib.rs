@@ -345,12 +345,4 @@ mod tests {
             assert!(num < 236_451);
         }
     }
-
-    #[test]
-    fn test_physical_less_logical() {
-        let logical = super::get();
-        let physical = super::get_physical();
-        println!("physical: {:?}, logical: {:?}", physical, logical);
-        assert!(physical <= logical);
-    }
 }
