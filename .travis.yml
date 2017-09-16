@@ -15,10 +15,9 @@ script:
 
 env:
   global:
-    # Per https://docs.travis-ci.com/user/reference/overview/ -
-    # Travis CI servers make 2 cores available to processes via
-    # virtualization.
-    - EXPECTED_TRAVIS_CPU_COUNT=2
+    # Travis CI servers make 2 cores available to processes via virtualization.
+    # See https://docs.travis-ci.com/user/reference/overview/
+    - NUM_CPUS_TEST_GET=2
 
 matrix:
   include:

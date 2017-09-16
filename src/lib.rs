@@ -345,11 +345,4 @@ mod tests {
             assert!(num < 236_451);
         }
     }
-
-    #[test]
-    fn test_travis_cpu_count() {
-        if let Some(expected_cpus) = env_var("EXPECTED_TRAVIS_CPU_COUNT") {
-            assert_eq!(super::get(), expected_cpus);
-        }
-    }
 }
