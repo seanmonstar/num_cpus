@@ -347,20 +347,6 @@ mod tests {
     }
 
     #[test]
-    fn test_physical_less_logical() {
-        let logical = super::get();
-        let physical = super::get_physical();
-        println!("physical: {:?}, logical: {:?}", physical, logical);
-        if let Ok(_) = ::std::env::var("EXPECTED_TRAVIS_CPU_COUNT") {
-            // Travis CI uses virtualization.
-            // It's normal (and correct) to see 16 physical and 2 logical.
-            assert!(physical >= logical);
-        } else {
-            assert!(physical <= logical);
-        }
-    }
-
-    #[test]
     fn test_travis_cpu_count() {
         if let Some(expected_cpus) = env_var("EXPECTED_TRAVIS_CPU_COUNT") {
             assert_eq!(super::get(), expected_cpus);
