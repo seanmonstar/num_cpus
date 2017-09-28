@@ -9,6 +9,7 @@ repository = "https://github.com/seanmonstar/num_cpus"
 documentation = "https://docs.rs/num_cpus"
 keywords = ["cpu", "cpus", "cores"]
 categories = ["hardware-support"]
+readme = "README.md"
 
 [dependencies]
 libc = "0.2.26"

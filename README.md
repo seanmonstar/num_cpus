@@ -23,6 +23,6 @@ In your `main.rs` or `lib.rs`:
 ```rust
 extern crate num_cpus;
 
-// elsewhere
+// count logical cores this process could try to use
 let num = num_cpus::get();
 ```
