@@ -3,7 +3,7 @@
 name = "num_cpus"
 version = "1.6.2"
 description = "Get the number of CPUs on a machine."
-authors = ["Sean McArthur <sean.monstar@gmail.com>"]
+authors = ["Sean McArthur <sean@seanmonstar.com>"]
 license = "MIT/Apache-2.0"
 repository = "https://github.com/seanmonstar/num_cpus"
 documentation = "https://docs.rs/num_cpus"
