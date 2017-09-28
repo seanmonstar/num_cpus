@@ -1,3 +1,13 @@
+## v1.7.0
+
+#### Features
+
+- add `get_physical` support for macOS
+
+#### Fixes
+
+- use `_SC_NPROCESSORS_CONF` on Unix targets
+
 ### v1.6.2
 
 #### Fixes

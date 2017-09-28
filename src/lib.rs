@@ -10,6 +10,7 @@
 //! ```
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
+#![doc(html_root_url = "https://docs.rs/num_cpus/1.7.0")]
 #![allow(non_snake_case)]
 
 #[cfg(not(windows))]
