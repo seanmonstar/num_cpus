@@ -58,7 +58,7 @@ extern crate libc;
 /// thread does not have access to all the computer's cpus. 
 /// 
 /// [smt]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
-/// [sched affinity]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
+/// [sched affinity]: http://www.gnu.org/software/libc/manual/html_node/CPU-Affinity.html
 #[inline]
 pub fn get() -> usize {
     get_num_cpus()
@@ -73,7 +73,7 @@ pub fn get() -> usize {
 /// 
 /// ```
 /// let logical_cpus = num_cpus::get();
-/// let physical_cpus = num_cpus::get();
+/// let physical_cpus = num_cpus::get_physical();
 /// if logical_cpus > physical_cpus {
 ///     println!("We have simultaneous multithreading with about {:.2} \
 ///               logical cores to 1 physical core.", 
