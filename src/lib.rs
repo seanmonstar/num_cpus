@@ -1,13 +1,31 @@
-//! # num_cpus
-//!
 //! A crate with utilities to determine the number of CPUs available on the
 //! current system.
+//! 
+//! Sometimes the CPU will exaggerate the number of CPUs it contains, because it can use
+//! [processor tricks] to deliver increased performance when there are more threads. This 
+//! crate provides methods to get both the logical and physical numbers of cores.
+//! 
+//! This information can be used as a guide to how many tasks can be run in parallel.
+//! There are many properties of the system architecture that will affect parallelism,
+//! for example memory access speeds (for all the caches and RAM) and the physical
+//! architecture of the processor, so the number of CPUs should be used as a rough guide
+//! only.
+//! 
 //!
-//! ## Example
+//! ## Examples
 //!
+//! Fetch the number of logical CPUs.
+//! 
 //! ```
 //! let cpus = num_cpus::get();
 //! ```
+//! 
+//! See [`rayon::Threadpool`] for an example of where the number of CPUs could be
+//! used when setting up parallel jobs (Where the threadpool example uses a fixed
+//! number 8, it could use the number of CPUs).
+//! 
+//! [processor tricks]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
+//! [`rayon::ThreadPool`]: https://docs.rs/rayon/0.8.2/rayon/struct.ThreadPool.html
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
 #![doc(html_root_url = "https://docs.rs/num_cpus/1.7.0")]
@@ -18,10 +36,28 @@ extern crate libc;
 
 
 /// Returns the number of available CPUs of the current system.
+/// 
+/// This function will get the number of logical cores. Sometimes this is different from the number
+/// of physical cores (See [Simultaneous multithreading on Wikipedia][smt]).
+/// 
+/// # Examples
+/// 
+/// ```
+/// let cpus = num_cpus::get();
+/// if cpus > 1 {
+///     println!("We are on a multicore system with {} CPUs", cpus);
+/// } else {
+///     println!("We are on a single core system");
+/// }
+/// ```
 ///
 /// # Note
 ///
-/// This will check sched affinity on Linux.
+/// This will check [sched affinity] on Linux, showing a lower number of CPUs if the current 
+/// thread does not have access to all the computer's CPUs. 
+/// 
+/// [smt]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
+/// [sched affinity]: http://www.gnu.org/software/libc/manual/html_node/CPU-Affinity.html
 #[inline]
 pub fn get() -> usize {
     get_num_cpus()
@@ -31,6 +67,25 @@ pub fn get() -> usize {
 ///
 /// If not possible on the particular architecture, returns same as `get()`
 /// which is the logical CPUs.
+/// 
+/// # Examples
+/// 
+/// ```
+/// let logical_cpus = num_cpus::get();
+/// let physical_cpus = num_cpus::get_physical();
+/// if logical_cpus > physical_cpus {
+///     println!("We have simultaneous multithreading with about {:.2} \
+///               logical cores to 1 physical core.", 
+///               (logical_cpus as f64) / (physical_cpus as f64));
+/// } else if logical_cpus == physical_cpus {
+///     println!("Either we don't have simultaneous multithreading, or our \
+///               system doesn't support getting the number of physical CPUs.");
+/// } else {
+///     println!("We have less logical CPUs than physical CPUs, maybe we only have access to \
+///               some of the CPUs on our system.");
+/// }
+/// ```
+/// 
 #[inline]
 pub fn get_physical() -> usize {
     get_num_physical_cpus()
