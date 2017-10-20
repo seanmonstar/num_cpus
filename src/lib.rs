@@ -65,8 +65,12 @@ pub fn get() -> usize {
 
 /// Returns the number of physical cores of the current system.
 ///
-/// If not possible on the particular architecture, returns same as `get()`
-/// which is the logical CPUs.
+/// # Note
+///
+/// Physical count is supported only on Linux, mac OS and Windows platforms.
+/// On other platforms, or if the physical count fails on supported platforms,
+/// this function returns the same as [`get()`], which is the number of logical
+/// CPUS.
 /// 
 /// # Examples
 /// 
@@ -86,6 +90,7 @@ pub fn get() -> usize {
 /// }
 /// ```
 /// 
+/// [`get()`]: fn.get.html
 #[inline]
 pub fn get_physical() -> usize {
     get_num_physical_cpus()
