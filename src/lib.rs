@@ -100,7 +100,7 @@ pub fn get_physical() -> usize {
 #[cfg(not(any(target_os = "linux", target_os = "windows", target_os="macos")))]
 #[inline]
 fn get_num_physical_cpus() -> usize {
-    // Not implemented, fallback
+    // Not implemented, fall back
     get_num_cpus()
 }
 
