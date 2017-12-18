@@ -11,5 +11,8 @@ keywords = ["cpu", "cpus", "cores"]
 categories = ["hardware-support"]
 readme = "README.md"
 
-[dependencies]
+[target.'cfg(not(windows))'.dependencies]
 libc = "0.2.26"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["sysinfoapi", "winnt"] }
