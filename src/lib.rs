@@ -379,6 +379,11 @@ fn get_num_cpus() -> usize {
     1
 }
 
+#[cfg(all(target_arch = "wasm32", not(target_os = "emscripten")))]
+fn get_num_cpus() -> usize {
+    1
+}
+
 #[cfg(test)]
 mod tests {
     fn env_var(name: &'static str) -> Option<usize> {
