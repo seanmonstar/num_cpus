@@ -1,3 +1,9 @@
+## v1.8.0
+
+#### Features
+
+- add `wasm-unknown-unknown` target support
+
 ## v1.7.0
 
 #### Features
