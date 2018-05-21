@@ -374,7 +374,7 @@ fn get_num_cpus() -> usize {
     }
 }
 
-#[cfg(any(target_os = "emscripten", target_os = "redox", target_os = "haiku"))]
+#[cfg(any(target_os = "emscripten", target_os = "redox", target_os = "haiku", target_os = "horizon"))]
 fn get_num_cpus() -> usize {
     1
 }
