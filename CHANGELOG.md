@@ -1,3 +1,9 @@
+## v1.9.0
+
+#### Features
+
+- add `sgx` target env support
+
 ## v1.8.0
 
 #### Features

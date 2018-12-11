@@ -28,7 +28,7 @@
 //! [`rayon::ThreadPool`]: https://docs.rs/rayon/0.8.2/rayon/struct.ThreadPool.html
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
-#![doc(html_root_url = "https://docs.rs/num_cpus/1.8.0")]
+#![doc(html_root_url = "https://docs.rs/num_cpus/1.9.0")]
 #![allow(non_snake_case)]
 
 #[cfg(not(windows))]
