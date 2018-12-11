@@ -378,7 +378,7 @@ fn get_num_cpus() -> usize {
     target_os = "emscripten",
     target_os = "redox",
     target_os = "haiku",
-    all(target_arch = "wasm32", not(target_os = "emscripten")),
+    target_arch = "wasm32",
     target_env = "sgx"
 ))]
 fn get_num_cpus() -> usize {
