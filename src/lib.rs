@@ -374,13 +374,21 @@ fn get_num_cpus() -> usize {
     }
 }
 
-#[cfg(any(
-    target_os = "emscripten",
-    target_os = "redox",
-    target_os = "haiku",
-    target_arch = "wasm32",
-    target_env = "sgx"
-))]
+#[cfg(not(any(
+    target_os = "nacl",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "android",
+    target_os = "solaris",
+    target_os = "fuchsia",
+    target_os = "linux",
+    target_os = "openbsd",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "bitrig",
+    target_os = "netbsd",
+    windows,
+)))]
 fn get_num_cpus() -> usize {
     1
 }
