@@ -1,3 +1,10 @@
+## v1.10.0
+
+#### Features
+
+- add `illumos` target OS support
+- add default fallback if target is unknown to `1`
+
 ## v1.9.0
 
 #### Features
