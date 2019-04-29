@@ -34,6 +34,12 @@
 #[cfg(not(windows))]
 extern crate libc;
 
+#[cfg(test)]
+#[macro_use]
+extern crate doc_comment;
+
+#[cfg(test)]
+doctest!("../README.md");
 
 /// Returns the number of available CPUs of the current system.
 /// 
