@@ -381,6 +381,57 @@ fn get_num_cpus() -> usize {
     }
 }
 
+#[cfg(target_os = "haiku")]
+fn get_num_cpus() -> usize {
+    use std::mem;
+
+    #[allow(non_camel_case_types)]
+    type bigtime_t = i64;
+    #[allow(non_camel_case_types)]
+    type status_t = i32;
+
+    #[repr(C)]
+    pub struct system_info {
+        pub boot_time: bigtime_t,
+        pub cpu_count: u32,
+        pub max_pages: u64,
+        pub used_pages: u64,
+        pub cached_pages: u64,
+        pub block_cache_pages: u64,
+        pub ignored_pages: u64,
+        pub needed_memory: u64,
+        pub free_memory: u64,
+        pub max_swap_pages: u64,
+        pub free_swap_pages: u64,
+        pub page_faults: u32,
+        pub max_sems: u32,
+        pub used_sems: u32,
+        pub max_ports: u32,
+        pub used_ports: u32,
+        pub max_threads: u32,
+        pub used_threads: u32,
+        pub max_teams: u32,
+        pub used_teams: u32,
+        pub kernel_name: [::std::os::raw::c_char; 256usize],
+        pub kernel_build_date: [::std::os::raw::c_char; 32usize],
+        pub kernel_build_time: [::std::os::raw::c_char; 32usize],
+        pub kernel_version: i64,
+        pub abi: u32,
+    }
+
+    extern {
+        fn get_system_info(info: *mut system_info) -> status_t;
+    }
+
+    let mut info: system_info = unsafe { mem::uninitialized() };
+    let status = unsafe { get_system_info(&mut info as *mut _) };
+    if status == 0 {
+        info.cpu_count as usize
+    } else {
+        1
+    }
+}
+
 #[cfg(not(any(
     target_os = "nacl",
     target_os = "macos",
@@ -395,6 +446,7 @@ fn get_num_cpus() -> usize {
     target_os = "dragonfly",
     target_os = "bitrig",
     target_os = "netbsd",
+    target_os = "haiku",
     windows,
 )))]
 fn get_num_cpus() -> usize {
