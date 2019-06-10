@@ -10,25 +10,25 @@
 //! for example memory access speeds (for all the caches and RAM) and the physical
 //! architecture of the processor, so the number of CPUs should be used as a rough guide
 //! only.
-//! 
+//!
 //!
 //! ## Examples
 //!
 //! Fetch the number of logical CPUs.
-//! 
+//!
 //! ```
 //! let cpus = num_cpus::get();
 //! ```
-//! 
+//!
 //! See [`rayon::Threadpool`] for an example of where the number of CPUs could be
 //! used when setting up parallel jobs (Where the threadpool example uses a fixed
 //! number 8, it could use the number of CPUs).
-//! 
+//!
 //! [processor tricks]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
 //! [`rayon::ThreadPool`]: https://docs.rs/rayon/1.*/rayon/struct.ThreadPool.html
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
-#![doc(html_root_url = "https://docs.rs/num_cpus/1.10.0")]
+#![doc(html_root_url = "https://docs.rs/num_cpus/1.10.1")]
 #![allow(non_snake_case)]
 
 #[cfg(not(windows))]
@@ -42,12 +42,12 @@ extern crate doc_comment;
 doctest!("../README.md");
 
 /// Returns the number of available CPUs of the current system.
-/// 
+///
 /// This function will get the number of logical cores. Sometimes this is different from the number
 /// of physical cores (See [Simultaneous multithreading on Wikipedia][smt]).
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// let cpus = num_cpus::get();
 /// if cpus > 1 {
@@ -61,7 +61,7 @@ doctest!("../README.md");
 ///
 /// This will check [sched affinity] on Linux, showing a lower number of CPUs if the current 
 /// thread does not have access to all the computer's CPUs. 
-/// 
+///
 /// [smt]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
 /// [sched affinity]: http://www.gnu.org/software/libc/manual/html_node/CPU-Affinity.html
 #[inline]
@@ -77,9 +77,9 @@ pub fn get() -> usize {
 /// On other platforms, or if the physical count fails on supported platforms,
 /// this function returns the same as [`get()`], which is the number of logical
 /// CPUS.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// let logical_cpus = num_cpus::get();
 /// let physical_cpus = num_cpus::get_physical();
@@ -95,7 +95,7 @@ pub fn get() -> usize {
 ///               some of the CPUs on our system.");
 /// }
 /// ```
-/// 
+///
 /// [`get()`]: fn.get.html
 #[inline]
 pub fn get_physical() -> usize {

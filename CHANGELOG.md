@@ -1,3 +1,9 @@
+## v1.10.1
+
+#### Fixes
+
+- improve `haiku` CPU detection
+
 ## v1.10.0
 
 #### Features
