@@ -257,9 +257,9 @@ fn get_num_cpus() -> usize {
     }
 
     unsafe {
-        let mut sysinfo: SYSTEM_INFO = std::mem::uninitialized();
-        GetSystemInfo(&mut sysinfo);
-        sysinfo.dwNumberOfProcessors as usize
+        let mut sysinfo: std::mem::MaybeUninit<SYSTEM_INFO> = std::mem::MaybeUninit::uninit();
+        GetSystemInfo(sysinfo.as_mut_ptr());
+        sysinfo.assume_init().dwNumberOfProcessors as usize
     }
 }
 
@@ -336,11 +336,11 @@ fn get_num_physical_cpus() -> usize {
 
 #[cfg(target_os = "linux")]
 fn get_num_cpus() -> usize {
-    let mut set:  libc::cpu_set_t = unsafe { std::mem::zeroed() };
-    if unsafe { libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), &mut set) } == 0 {
+    let mut set: std::mem::MaybeUninit<libc::cpu_set_t> = std::mem::MaybeUninit::zeroed();
+    if unsafe { libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), set.as_mut_ptr()) } == 0 {
         let mut count: u32 = 0;
         for i in 0..libc::CPU_SETSIZE as usize {
-            if unsafe { libc::CPU_ISSET(i, &set) } {
+            if unsafe { libc::CPU_ISSET(i, &*(set.as_ptr())) } {
                 count += 1
             }
         }
@@ -422,10 +422,10 @@ fn get_num_cpus() -> usize {
         fn get_system_info(info: *mut system_info) -> status_t;
     }
 
-    let mut info: system_info = unsafe { mem::uninitialized() };
-    let status = unsafe { get_system_info(&mut info as *mut _) };
+    let mut info: std::mem::MaybeUninit<system_info> = std::mem::MaybeUninit::uninit();
+    let status = unsafe { get_system_info(info.as_mut_ptr()) };
     if status == 0 {
-        info.cpu_count as usize
+        unsafe { info.assume_init() }.cpu_count as usize
     } else {
         1
     }
