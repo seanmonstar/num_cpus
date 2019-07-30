@@ -338,9 +338,11 @@ fn get_num_physical_cpus() -> usize {
 fn get_num_cpus() -> usize {
     let mut set: std::mem::MaybeUninit<libc::cpu_set_t> = std::mem::MaybeUninit::zeroed();
     if unsafe { libc::sched_getaffinity(0, std::mem::size_of::<libc::cpu_set_t>(), set.as_mut_ptr()) } == 0 {
+        // We should have an initted `set` because of the call to `sched_getaffinity`.
+        let set: libc::cpu_set_t = unsafe { set.assume_init() };
         let mut count: u32 = 0;
         for i in 0..libc::CPU_SETSIZE as usize {
-            if unsafe { libc::CPU_ISSET(i, &*(set.as_ptr())) } {
+            if unsafe { libc::CPU_ISSET(i, &set) } {
                 count += 1
             }
         }
