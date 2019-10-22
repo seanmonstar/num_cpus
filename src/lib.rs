@@ -195,19 +195,19 @@ fn get_num_physical_cpus_windows() -> Option<usize> {
 
 #[cfg(target_os = "linux")]
 fn get_num_physical_cpus() -> usize {
-    use std::io::BufReader;
-    use std::io::BufRead;
+    use std::collections::HashMap;
     use std::fs::File;
-    use std::collections::HashSet;
+    use std::io::BufRead;
+    use std::io::BufReader;
 
     let file = match File::open("/proc/cpuinfo") {
         Ok(val) => val,
-        Err(_) => {return get_num_cpus()},
+        Err(_) => return get_num_cpus(),
     };
     let reader = BufReader::new(file);
-    let mut set = HashSet::new();
-    let mut coreid: u32 = 0;
+    let mut map = HashMap::new();
     let mut physid: u32 = 0;
+    let mut cores: usize = 0;
     let mut chgcount = 0;
     for line in reader.lines().filter_map(|result| result.ok()) {
         let mut it = line.split(':');
@@ -215,25 +215,32 @@ fn get_num_physical_cpus() -> usize {
             (Some(key), Some(value)) => (key.trim(), value.trim()),
             _ => continue,
         };
-        if key == "core id" || key == "physical id" {
-            let value = match value.parse() {
-              Ok(val) => val,
-              Err(_) => break,
+        if key == "physical id" {
+            match value.parse() {
+                Ok(val) => physid = val,
+                Err(_) => break,
             };
-            match key {
-                "core id"     => coreid = value,
-                "physical id" => physid = value,
-                _ => {},
-            }
+            chgcount += 1;
+        }
+        if key == "cpu cores" {
+            match value.parse() {
+                Ok(val) => cores = val,
+                Err(_) => break,
+            };
             chgcount += 1;
         }
         if chgcount == 2 {
-            set.insert((physid, coreid));
+            map.insert(physid, cores);
             chgcount = 0;
         }
     }
-    let count = set.len();
-    if count == 0 { get_num_cpus() } else { count }
+    let count = map.into_iter().fold(0, |acc, (_, cores)| acc + cores);
+
+    if count == 0 {
+        get_num_cpus()
+    } else {
+        count
+    }
 }
 
 #[cfg(windows)]
