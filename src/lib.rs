@@ -210,16 +210,17 @@ fn get_num_physical_cpus() -> usize {
     let mut physid: u32 = 0;
     let mut chgcount = 0;
     for line in reader.lines().filter_map(|result| result.ok()) {
-        let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
-        if parts.len() != 2 {
-            continue
-        }
-        if parts[0] == "core id" || parts[0] == "physical id" {
-            let value = match parts[1].trim().parse() {
+        let mut it = line.split(':');
+        let (key, value) = match (it.next(), it.next()) {
+            (Some(key), Some(value)) => (key.trim(), value.trim()),
+            _ => continue,
+        };
+        if key == "core id" || key == "physical id" {
+            let value = match value.parse() {
               Ok(val) => val,
               Err(_) => break,
             };
-            match parts[0] {
+            match key {
                 "core id"     => coreid = value,
                 "physical id" => physid = value,
                 _ => {},
