@@ -1,3 +1,14 @@
+## v1.11.0
+
+#### Features
+
+- add `hermit` target OS support
+- removes `bitrig` support
+
+#### Fixes
+
+- fix `get_physical` count with AMD hyperthreading.
+
 ## v1.10.1
 
 #### Fixes

@@ -1,10 +1,10 @@
 //! A crate with utilities to determine the number of CPUs available on the
 //! current system.
-//! 
+//!
 //! Sometimes the CPU will exaggerate the number of CPUs it contains, because it can use
 //! [processor tricks] to deliver increased performance when there are more threads. This 
 //! crate provides methods to get both the logical and physical numbers of cores.
-//! 
+//!
 //! This information can be used as a guide to how many tasks can be run in parallel.
 //! There are many properties of the system architecture that will affect parallelism,
 //! for example memory access speeds (for all the caches and RAM) and the physical
@@ -28,7 +28,7 @@
 //! [`rayon::ThreadPool`]: https://docs.rs/rayon/1.*/rayon/struct.ThreadPool.html
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
-#![doc(html_root_url = "https://docs.rs/num_cpus/1.10.1")]
+#![doc(html_root_url = "https://docs.rs/num_cpus/1.11.0")]
 #![allow(non_snake_case)]
 
 #[cfg(not(windows))]
