@@ -34,6 +34,9 @@
 #[cfg(not(windows))]
 extern crate libc;
 
+#[cfg(target_os = "hermit")]
+extern crate hermit_abi;
+
 #[cfg(test)]
 #[macro_use]
 extern crate doc_comment;
@@ -443,6 +446,11 @@ fn get_num_cpus() -> usize {
     }
 }
 
+#[cfg(target_os = "hermit")]
+fn get_num_cpus() -> usize {
+    unsafe { hermit_abi::get_processor_count() }
+}
+
 #[cfg(not(any(
     target_os = "nacl",
     target_os = "macos",
@@ -457,6 +465,7 @@ fn get_num_cpus() -> usize {
     target_os = "dragonfly",
     target_os = "netbsd",
     target_os = "haiku",
+    target_os = "hermit",
     windows,
 )))]
 fn get_num_cpus() -> usize {
