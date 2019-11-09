@@ -268,7 +268,7 @@ fn get_num_cpus() -> usize {
     }
 
     unsafe {
-        let mut sysinfo: SYSTEM_INFO = std::mem::uninitialized();
+        let mut sysinfo: SYSTEM_INFO = std::mem::zeroed();
         GetSystemInfo(&mut sysinfo);
         sysinfo.dwNumberOfProcessors as usize
     }
@@ -437,7 +437,7 @@ fn get_num_cpus() -> usize {
         fn get_system_info(info: *mut system_info) -> status_t;
     }
 
-    let mut info: system_info = unsafe { mem::uninitialized() };
+    let mut info: system_info = unsafe { mem::zeroed() };
     let status = unsafe { get_system_info(&mut info as *mut _) };
     if status == 0 {
         info.cpu_count as usize
