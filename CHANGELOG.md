@@ -1,3 +1,9 @@
+## v1.11.1
+
+#### Fixes
+
+- Use `mem::zeroed` instead of `mem::uninitialized`.
+
 ## v1.11.0
 
 #### Features
