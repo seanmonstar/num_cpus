@@ -246,7 +246,7 @@ fn get_num_physical_cpus() -> usize {
     }
 }
 
-#[cfg(windows)]
+#[cfg(all(windows, not(feature = "extended")))]
 fn get_num_cpus() -> usize {
     #[repr(C)]
     struct SYSTEM_INFO {
@@ -472,6 +472,204 @@ fn get_num_cpus() -> usize {
     1
 }
 
+#[cfg(all(windows, feature = "extended"))]
+fn get_num_cpus() -> usize {
+    match get_num_logical_cpus_ex_windows() {
+        Some(num) => num,
+        None => 0 
+    }
+}
+
+/// Returns the correct number of logical cores of the current Windows system
+/// even when the system has more than 64 logical cores using the API
+/// [GetLogicalProcessorInformationEx](https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformationex)
+///
+/// # Note
+///
+/// Logical processor count is not complete if fetched on a Windows system
+/// using GetLogicalProcessorInformation when the system has more than 64
+/// logical cores. This information can be correctly gathered using the
+/// GetLogicalProcessorInformationEx API which has detailed information of
+/// every processor group in the system.
+///
+/// # Usage
+/// 
+/// Unfortunately, there is no way of telling if the count returned by
+/// GetLogicalProcessorInformation was complete or not. Since the number
+/// of installations with more than 64 cores is not common, this feature
+/// is implemented as configurable feature called "extended". Compile this
+/// package with the feature to use this implementation.
+///
+/// # Understanding GetLogicalProcessorInformationEx API
+///
+/// This API returns set of variable sized structs packed together and
+/// needs manual processing by looking at the sizes of the parts. Also
+/// the inner data struct which holds the logical processor mappings
+/// itself is variable size array. This is best understood by the C++
+/// code on Windows to use the API for fetching the logical processor
+/// count. Some FFI tricks are perfromed to read the struct into rust
+///
+/// ```cpp
+///    #include <sysinfoapi.h>
+///    #include <cassert>
+///
+///    DWORD GetNumLogicalProcessorsEx()
+///    {
+///        const LOGICAL_PROCESSOR_RELATIONSHIP relationship = LOGICAL_PROCESSOR_RELATIONSHIP::RelationProcessorCore;
+///        DWORD len = 0;
+///        {
+///            bool result = GetLogicalProcessorInformationEx(relationship, nullptr, &len);
+///            assert(len > 0);
+///        }
+///
+///        std::vector<BYTE> buffer(len, 0);
+///        {
+///            PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX pBuffer = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(&buffer[0]);
+///            bool result = GetLogicalProcessorInformationEx(relationship, pBuffer, &len);
+///            assert(result == true);
+///        }
+///
+///        DWORD nprocs = 0;
+///
+///        DWORD byteOffset = 0;
+///        while (byteOffset < len) {
+///            PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX ptr = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(&buffer[0] + byteOffset);
+///
+///            switch (ptr->Relationship) {
+///            case RelationProcessorCore: {
+///                for (WORD group = 0; group < ptr->Processor.GroupCount; ++group) {
+///                    nprocs += CountSetBits(ptr->Processor.GroupMask[group].Mask);
+///                }
+///            }
+///            break;
+///
+///            default:
+///                break;
+///            }
+///
+///            byteOffset += ptr->Size;
+///        }
+///
+///        return nprocs;
+///    }
+/// ```
+///
+/// [`get_num_logical_cpus_ex_windows()`]: fn.get.html
+#[cfg(all(windows, feature = "extended"))]
+fn get_num_logical_cpus_ex_windows() -> Option<usize> {
+    use std::mem;
+    use std::ptr;
+    use std::slice;
+
+    #[allow(non_upper_case_globals)]
+    const RelationProcessorCore: u32 = 0;
+
+    #[repr(C)]
+    #[allow(non_camel_case_types)]
+    #[allow(dead_code)]
+    struct GROUP_AFFINITY {
+        mask: usize,
+        group: u16,
+        reserved: [u16; 3],
+    }
+
+    #[repr(C)]
+    #[allow(non_camel_case_types)]
+    #[allow(dead_code)]
+    struct PROCESSOR_RELATIONSHIP {
+        flags: u8,
+        efficiencyClass: u8,
+        reserved: [u8; 20],
+        groupCount: u16,
+        groupMaskTenative: [GROUP_AFFINITY; 1],
+    }
+
+    #[repr(C)]
+    #[allow(non_camel_case_types)]
+    #[allow(dead_code)]
+    struct SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX {
+        relationship: u32,
+        size: u32,
+        processor: PROCESSOR_RELATIONSHIP,
+    }
+
+    extern "system" {
+        fn GetLogicalProcessorInformationEx(
+            relationship: u32,
+            data: *mut u8,
+            length: &mut u32,
+        ) -> bool;
+    }
+
+    // First we need to determine how much space to reserve.
+
+    // The required size of the buffer, in bytes.
+    let mut needed_size = 0;
+
+    unsafe {
+        GetLogicalProcessorInformationEx(RelationProcessorCore, ptr::null_mut(), &mut needed_size);
+    }
+
+    // Could be 0, or some other bogus size.
+    if needed_size == 0 {
+        return None;
+    }
+
+    // Allocate memory where we will store the processor info.
+    let mut buffer: Vec<u8> = vec![0 as u8; needed_size as usize];
+
+    unsafe {
+        let result: bool = GetLogicalProcessorInformationEx(
+            RelationProcessorCore,
+            buffer.as_mut_ptr(),
+            &mut needed_size,
+        );
+
+        if result == false {
+            return None;
+        }
+    }
+
+    let mut n_logical_procs: usize = 0;
+
+    let mut byte_offset: usize = 0;
+    while byte_offset < needed_size as usize {
+        unsafe {
+            // interpret this byte-array as SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX struct
+            let part_ptr_raw: *const u8 = buffer.as_ptr().offset(byte_offset as isize);
+            let part_ptr: *const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX =
+                mem::transmute::<*const u8, *const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
+                    part_ptr_raw,
+                );
+            let part: &SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX = &*part_ptr;
+
+            // we are only interested in RelationProcessorCore information and hence
+            // we have requested only for this kind of data (so we should not see other types of data)
+            if part.relationship == RelationProcessorCore {
+                // the number of GROUP_AFFINITY structs in the array will be specified in the 'groupCount'
+                // we tenatively use the first element to get the pointer to it and reinterpret the
+                // entire slice with the groupCount
+                let groupmasks_slice: &[GROUP_AFFINITY] =
+                    slice::from_raw_parts(
+                        part.processor.groupMaskTenative.as_ptr(),
+                        part.processor.groupCount as usize);
+
+                // count the local logical processors of the group and accumulate
+                let n_local_procs: usize = groupmasks_slice
+                    .iter()
+                    .map(|g| g.mask.count_ones() as usize)
+                    .sum::<usize>();
+                n_logical_procs += n_local_procs;
+            }
+
+            // set the pointer to the next part as indicated by the size of this part
+            byte_offset += part.size as usize;
+        }
+    }
+
+    Some(n_logical_procs)
+}
+
 #[cfg(test)]
 mod tests {
     fn env_var(name: &'static str) -> Option<usize> {
@@ -499,4 +697,16 @@ mod tests {
             assert!(num < 236_451);
         }
     }
+
+    #[cfg(all(windows, feature = "extended"))]
+    #[test]
+    fn test_get_num_logical_cpus_ex_windows() {
+        let m = super::get();
+        let result = super::get_num_logical_cpus_ex_windows();
+        match result {
+            None => assert_eq!(false, true),
+            Some(n) => assert_eq!(true, n >= m)
+        }
+    }
+
 }
