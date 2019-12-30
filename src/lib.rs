@@ -106,7 +106,7 @@ pub fn get_physical() -> usize {
 }
 
 
-#[cfg(not(any(target_os = "linux", target_os = "windows", target_os="macos")))]
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os="macos", target_os="openbsd")))]
 #[inline]
 fn get_num_physical_cpus() -> usize {
     // Not implemented, fall back
@@ -309,17 +309,41 @@ fn get_num_cpus() -> usize {
 
     let mut cpus: libc::c_uint = 0;
     let mut cpus_size = std::mem::size_of_val(&cpus);
-    let mut mib = [libc::CTL_HW, libc::HW_NCPU, 0, 0];
+    let mut mib = [libc::CTL_HW, libc::HW_NCPUONLINE, 0, 0];
+    let rc: libc::c_int;
 
     unsafe {
-        libc::sysctl(mib.as_mut_ptr(),
-                     2,
-                     &mut cpus as *mut _ as *mut _,
-                     &mut cpus_size as *mut _ as *mut _,
-                     ptr::null_mut(),
-                     0);
+        rc = libc::sysctl(mib.as_mut_ptr(),
+                          2,
+                          &mut cpus as *mut _ as *mut _,
+                          &mut cpus_size as *mut _ as *mut _,
+                          ptr::null_mut(),
+                          0);
     }
-    if cpus < 1 {
+    if rc < 0 {
+        cpus = 1;
+    }
+    cpus as usize
+}
+
+#[cfg(target_os = "openbsd")]
+fn get_num_physical_cpus() -> usize {
+    use std::ptr;
+
+    let mut cpus: libc::c_uint = 0;
+    let mut cpus_size = std::mem::size_of_val(&cpus);
+    let mut mib = [libc::CTL_HW, libc::HW_NCPU, 0, 0];
+    let rc: libc::c_int;
+
+    unsafe {
+        rc = libc::sysctl(mib.as_mut_ptr(),
+                          2,
+                          &mut cpus as *mut _ as *mut _,
+                          &mut cpus_size as *mut _ as *mut _,
+                          ptr::null_mut(),
+                          0);
+    }
+    if rc < 0 {
         cpus = 1;
     }
     cpus as usize
