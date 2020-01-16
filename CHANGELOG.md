@@ -1,3 +1,10 @@
+## v1.12.0
+
+#### Fixes
+
+- fix `get` on OpenBSD to ignore offline CPUs
+- implement `get_physical` on OpenBSD
+
 ## v1.11.1
 
 #### Fixes
