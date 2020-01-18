@@ -37,6 +37,9 @@ extern crate libc;
 #[cfg(target_os = "hermit")]
 extern crate hermit_abi;
 
+#[cfg(target_arch = "wasm32")]
+extern crate web_sys;
+
 #[cfg(test)]
 #[macro_use]
 extern crate doc_comment;
@@ -475,6 +478,17 @@ fn get_num_cpus() -> usize {
     unsafe { hermit_abi::get_processor_count() }
 }
 
+#[cfg(target_arch = "wasm32")]
+fn get_num_cpus() -> usize {
+    let window = web_sys::window().expect("No global `window` exists");
+    let cpus: f64 = window.navigator().hardware_concurrency();
+    if cpus < 1.0 {
+        1
+    } else {
+        cpus as usize
+    }
+}
+
 #[cfg(not(any(
     target_os = "nacl",
     target_os = "macos",
@@ -490,6 +504,7 @@ fn get_num_cpus() -> usize {
     target_os = "netbsd",
     target_os = "haiku",
     target_os = "hermit",
+    target_arch = "wasm32",
     windows,
 )))]
 fn get_num_cpus() -> usize {
