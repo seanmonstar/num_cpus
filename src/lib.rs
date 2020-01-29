@@ -2,7 +2,7 @@
 //! current system.
 //!
 //! Sometimes the CPU will exaggerate the number of CPUs it contains, because it can use
-//! [processor tricks] to deliver increased performance when there are more threads. This 
+//! [processor tricks] to deliver increased performance when there are more threads. This
 //! crate provides methods to get both the logical and physical numbers of cores.
 //!
 //! This information can be used as a guide to how many tasks can be run in parallel.
@@ -62,8 +62,8 @@ doctest!("../README.md");
 ///
 /// # Note
 ///
-/// This will check [sched affinity] on Linux, showing a lower number of CPUs if the current 
-/// thread does not have access to all the computer's CPUs. 
+/// This will check [sched affinity] on Linux, showing a lower number of CPUs if the current
+/// thread does not have access to all the computer's CPUs.
 ///
 /// [smt]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
 /// [sched affinity]: http://www.gnu.org/software/libc/manual/html_node/CPU-Affinity.html
@@ -88,7 +88,7 @@ pub fn get() -> usize {
 /// let physical_cpus = num_cpus::get_physical();
 /// if logical_cpus > physical_cpus {
 ///     println!("We have simultaneous multithreading with about {:.2} \
-///               logical cores to 1 physical core.", 
+///               logical cores to 1 physical core.",
 ///               (logical_cpus as f64) / (physical_cpus as f64));
 /// } else if logical_cpus == physical_cpus {
 ///     println!("Either we don't have simultaneous multithreading, or our \
@@ -125,7 +125,7 @@ fn get_num_physical_cpus() -> usize {
 fn get_num_physical_cpus_windows() -> Option<usize> {
     // Inspired by https://msdn.microsoft.com/en-us/library/ms683194
 
-    use std::ptr;
+    // use std::ptr;
     use std::mem;
 
     #[allow(non_upper_case_globals)]
@@ -148,29 +148,31 @@ fn get_num_physical_cpus_windows() -> Option<usize> {
 
     // First we need to determine how much space to reserve.
 
-    // The required size of the buffer, in bytes.
-    let mut needed_size = 0;
-
-    unsafe {
-        GetLogicalProcessorInformation(ptr::null_mut(), &mut needed_size);
-    }
-
+    let mut count = 16;
     let struct_size = mem::size_of::<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>() as u32;
-
-    // Could be 0, or some other bogus size.
-    if needed_size == 0 || needed_size < struct_size || needed_size % struct_size != 0 {
-        return None;
-    }
-
-    let count = needed_size / struct_size;
-
+    // The required size of the buffer, in bytes.
+    let mut needed_size = count * struct_size;
     // Allocate some memory where we will store the processor info.
     let mut buf = Vec::with_capacity(count as usize);
-
-    let result;
+    let mut result;
 
     unsafe {
         result = GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut needed_size);
+    }
+
+    // If predicted count turns out to be too small
+    if count * struct_size < needed_size {
+        // Could be 0, or some other bogus size.
+        if needed_size == 0 || needed_size < struct_size || needed_size % struct_size != 0 {
+            return None;
+        }
+
+        count = needed_size / struct_size;
+        // Allocate some memory where we will store the processor info.
+        buf = Vec::with_capacity(count as usize);
+        unsafe {
+            result = GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut needed_size);
+        }
     }
 
     // Failed for any reason.
