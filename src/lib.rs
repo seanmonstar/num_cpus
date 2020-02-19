@@ -383,14 +383,16 @@ fn get_num_cpus() -> usize {
                 count += 1
             }
         }
-        count as usize
-    } else {
-        let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
-        if cpus < 1 {
-            1
-        } else {
-            cpus as usize
+        if count > 0 {
+            return count as usize;
         }
+    }
+
+    let cpus = unsafe { libc::sysconf(libc::_SC_NPROCESSORS_ONLN) };
+    if cpus < 1 {
+        1
+    } else {
+        cpus as usize
     }
 }
 
