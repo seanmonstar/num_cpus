@@ -1,7 +1,9 @@
 language: rust
 rust: stable
-dist: trusty
+dist: xenial
 sudo: false
+notifications:
+  email: disabled
 
 cache: cargo
 
@@ -65,3 +67,15 @@ matrix:
     - env: TARGET=x86_64-unknown-netbsd
     # Emscripten
     - env: TARGET=asmjs-unknown-emscripten
+
+    # CGroups in Docker
+    - name: Docker CGroups
+      install:
+      script:
+      - docker build -f ci/cgroups/Dockerfile -t num-cpus-cgroups .
+      # Test without cgroups
+      - docker run -it -e NUM_CPUS_TEST_GET=2 num-cpus-cgroups
+      # Only 1 CPU
+      - docker run -it --cpus="1" -e NUM_CPUS_TEST_GET=1 num-cpus-cgroups
+      # 1.5 CPUs
+      - docker run -it --cpus="1.5" -e NUM_CPUS_TEST_GET=2 num-cpus-cgroups
