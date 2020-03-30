@@ -39,8 +39,6 @@ matrix:
       rust: nightly
     # Mac OS X
     - os: osx
-      env: TARGET=i686-apple-darwin RUN=1
-    - os: osx
       env: TARGET=x86_64-apple-darwin RUN=1 NO_ADD=1
     # Android
     # - for x86
@@ -50,9 +48,6 @@ matrix:
     - env: TARGET=arm-linux-androideabi
     - env: TARGET=aarch64-linux-android
     # IOS
-    - os: osx
-      osx_image: xcode9
-      env: TARGET=i386-apple-ios
     - os: osx
       osx_image: xcode9
       env: TARGET=x86_64-apple-ios
