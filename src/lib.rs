@@ -37,13 +37,6 @@ extern crate libc;
 #[cfg(target_os = "hermit")]
 extern crate hermit_abi;
 
-#[cfg(test)]
-#[macro_use]
-extern crate doc_comment;
-
-#[cfg(test)]
-doctest!("../README.md");
-
 /// Returns the number of available CPUs of the current system.
 ///
 /// This function will get the number of logical cores. Sometimes this is different from the number

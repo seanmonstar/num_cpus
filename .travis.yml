@@ -22,6 +22,10 @@ env:
 matrix:
   include:
     # Linux
+    # Minimum Supported Rust Version
+    - name: Minimum Supported Rust Version
+      env: TARGET=x86_64-unknown-linux-gnu RUN=1 NO_ADD=1
+      rust: 1.13.0
     # 32-bit requires multilib.
     - env: TARGET=i686-unknown-linux-gnu RUN=1
       addons:
@@ -37,6 +41,7 @@ matrix:
     # 64-bit nightly.
     - env: TARGET=x86_64-unknown-linux-gnu RUN=1 NO_ADD=1
       rust: nightly
+
     # Mac OS X
     - os: osx
       env: TARGET=x86_64-apple-darwin RUN=1 NO_ADD=1
