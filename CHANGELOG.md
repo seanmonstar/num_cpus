@@ -1,3 +1,9 @@
+## v1.13.0
+
+### Features
+
+- add Linux cgroups support when calling `get()`.
+
 ## v1.12.0
 
 #### Fixes
