@@ -18,7 +18,7 @@ macro_rules! debug {
 }
 
 macro_rules! some {
-    ($e:expr) => ({
+    ($e:expr) => {{
         match $e {
             Some(v) => v,
             None => {
@@ -26,7 +26,7 @@ macro_rules! some {
                 return None;
             }
         }
-    })
+    }};
 }
 
 pub fn get_num_cpus() -> usize {
@@ -167,18 +167,14 @@ struct Subsys {
 
 impl Cgroup {
     fn new(dir: PathBuf) -> Cgroup {
-        Cgroup {
-            base: dir,
-        }
+        Cgroup { base: dir }
     }
 
     fn translate(mntinfo: MountInfo, subsys: Subsys) -> Option<Cgroup> {
         // Translate the subsystem directory via the host paths.
         debug!(
             "subsys = {:?}; root = {:?}; mount_point = {:?}",
-            subsys.base,
-            mntinfo.root,
-            mntinfo.mount_point
+            subsys.base, mntinfo.root, mntinfo.mount_point
         );
 
         let rel_from_root = some!(Path::new(&subsys.base).strip_prefix(&mntinfo.root).ok());
@@ -281,15 +277,16 @@ impl Subsys {
             return None;
         }
 
-        fields.next().map(|path| Subsys { base: path.to_owned() })
+        fields.next().map(|path| Subsys {
+            base: path.to_owned(),
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
     use super::{Cgroup, MountInfo, Subsys};
-
+    use std::path::{Path, PathBuf};
 
     static FIXTURES_PROC: &'static str = "fixtures/cgroups/proc/cgroups";
 
@@ -324,12 +321,7 @@ mod tests {
     #[test]
     fn test_cgroup_mount() {
         let cases = &[
-            (
-                "/",
-                "/sys/fs/cgroup/cpu",
-                "/",
-                Some("/sys/fs/cgroup/cpu"),
-            ),
+            ("/", "/sys/fs/cgroup/cpu", "/", Some("/sys/fs/cgroup/cpu")),
             (
                 "/docker/01abcd",
                 "/sys/fs/cgroup/cpu",
@@ -348,27 +340,10 @@ mod tests {
                 "/docker/01abcd/large",
                 Some("/sys/fs/cgroup/cpu/large"),
             ),
-
             // fails
-
-            (
-                "/docker/01abcd",
-                "/sys/fs/cgroup/cpu",
-                "/",
-                None,
-            ),
-            (
-                "/docker/01abcd",
-                "/sys/fs/cgroup/cpu",
-                "/docker",
-                None,
-            ),
-            (
-                "/docker/01abcd",
-                "/sys/fs/cgroup/cpu",
-                "/elsewhere",
-                None,
-            ),
+            ("/docker/01abcd", "/sys/fs/cgroup/cpu", "/", None),
+            ("/docker/01abcd", "/sys/fs/cgroup/cpu", "/docker", None),
+            ("/docker/01abcd", "/sys/fs/cgroup/cpu", "/elsewhere", None),
             (
                 "/docker/01abcd",
                 "/sys/fs/cgroup/cpu",
