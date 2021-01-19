@@ -18,4 +18,7 @@ libc = "0.2.26"
 hermit-abi = "0.1.3"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+# This feature must be enabled only by top-level crate (cdylib) using wasm-bindgen on WebAssembly target.
+# When enabled, it will tell `num_cpus` to retrieve real number of user cores from the browser via JavaScript.
+# Any regular crates (leaf libraries) should continue use `num_cpus` as they normally would, and not touch this feature.
 wasm-bindgen = { version = "0.2", optional = true }
