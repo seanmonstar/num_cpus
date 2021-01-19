@@ -414,7 +414,7 @@ fn get_num_cpus() -> usize {
 
     #[wasm_bindgen]
     extern "C" {
-        #[wasm_bindgen(js_namespace = navigator, js_name = hardwareConcurrency, method, getter)]
+        #[wasm_bindgen(js_namespace = navigator, js_name = hardwareConcurrency)]
         static HARDWARE_CONCURRENCY: usize;
     }
 
