@@ -2,7 +2,7 @@
 //! current system.
 //!
 //! Sometimes the CPU will exaggerate the number of CPUs it contains, because it can use
-//! [processor tricks] to deliver increased performance when there are more threads. This 
+//! [processor tricks] to deliver increased performance when there are more threads. This
 //! crate provides methods to get both the logical and physical numbers of cores.
 //!
 //! This information can be used as a guide to how many tasks can be run in parallel.
@@ -36,6 +36,9 @@ extern crate libc;
 
 #[cfg(target_os = "hermit")]
 extern crate hermit_abi;
+
+#[cfg(feature = "wasm-bindgen")]
+extern crate wasm_bindgen;
 
 #[cfg(target_os = "linux")]
 mod linux;
@@ -89,7 +92,7 @@ pub fn get() -> usize {
 /// let physical_cpus = num_cpus::get_physical();
 /// if logical_cpus > physical_cpus {
 ///     println!("We have simultaneous multithreading with about {:.2} \
-///               logical cores to 1 physical core.", 
+///               logical cores to 1 physical core.",
 ///               (logical_cpus as f64) / (physical_cpus as f64));
 /// } else if logical_cpus == physical_cpus {
 ///     println!("Either we don't have simultaneous multithreading, or our \
@@ -405,6 +408,19 @@ fn get_num_cpus() -> usize {
     unsafe { hermit_abi::get_processor_count() }
 }
 
+#[cfg(feature = "wasm-bindgen")]
+fn get_num_cpus() -> usize {
+    use wasm_bindgen::prelude::*;
+
+    #[wasm_bindgen]
+    extern "C" {
+        #[wasm_bindgen(js_namespace = navigator, js_name = hardwareConcurrency, method, getter)]
+        static HARDWARE_CONCURRENCY: usize;
+    }
+
+    std::cmp::min(*HARDWARE_CONCURRENCY, 1)
+}
+
 #[cfg(not(any(
     target_os = "nacl",
     target_os = "macos",
@@ -420,6 +436,7 @@ fn get_num_cpus() -> usize {
     target_os = "netbsd",
     target_os = "haiku",
     target_os = "hermit",
+    feature = "wasm-bindgen",
     windows,
 )))]
 fn get_num_cpus() -> usize {
