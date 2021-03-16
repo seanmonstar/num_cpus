@@ -47,6 +47,8 @@ use linux::{get_num_cpus, get_num_physical_cpus};
 /// This function will get the number of logical cores. Sometimes this is different from the number
 /// of physical cores (See [Simultaneous multithreading on Wikipedia][smt]).
 ///
+/// This will always return at least `1`.
+///
 /// # Examples
 ///
 /// ```
@@ -74,6 +76,8 @@ pub fn get() -> usize {
 }
 
 /// Returns the number of physical cores of the current system.
+///
+/// This will always return at least `1`.
 ///
 /// # Note
 ///
