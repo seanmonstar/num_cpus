@@ -31,6 +31,8 @@
 #![doc(html_root_url = "https://docs.rs/num_cpus/1.13.0")]
 #![allow(non_snake_case)]
 
+use std::num::NonZeroUsize;
+
 #[cfg(not(windows))]
 extern crate libc;
 
@@ -50,7 +52,7 @@ use linux::{get_num_cpus, get_num_physical_cpus};
 /// # Examples
 ///
 /// ```
-/// let cpus = num_cpus::get();
+/// let cpus: usize = num_cpus::get().into();
 /// if cpus > 1 {
 ///     println!("We are on a multicore system with {} CPUs", cpus);
 /// } else {
@@ -69,8 +71,8 @@ use linux::{get_num_cpus, get_num_physical_cpus};
 /// [sched affinity]: http://www.gnu.org/software/libc/manual/html_node/CPU-Affinity.html
 /// [cgroups]: https://www.kernel.org/doc/Documentation/cgroup-v1/cgroups.txt
 #[inline]
-pub fn get() -> usize {
-    get_num_cpus()
+pub fn get() -> NonZeroUsize {
+    NonZeroUsize::new(get_num_cpus()).unwrap_or_else(|| NonZeroUsize::new(1).unwrap())
 }
 
 /// Returns the number of physical cores of the current system.
@@ -90,7 +92,7 @@ pub fn get() -> usize {
 /// if logical_cpus > physical_cpus {
 ///     println!("We have simultaneous multithreading with about {:.2} \
 ///               logical cores to 1 physical core.", 
-///               (logical_cpus as f64) / (physical_cpus as f64));
+///               usize::from(logical_cpus) as f64 / usize::from(physical_cpus) as f64);
 /// } else if logical_cpus == physical_cpus {
 ///     println!("Either we don't have simultaneous multithreading, or our \
 ///               system doesn't support getting the number of physical CPUs.");
@@ -102,8 +104,8 @@ pub fn get() -> usize {
 ///
 /// [`get()`]: fn.get.html
 #[inline]
-pub fn get_physical() -> usize {
-    get_num_physical_cpus()
+pub fn get_physical() -> NonZeroUsize {
+    NonZeroUsize::new(get_num_physical_cpus()).unwrap_or_else(|| NonZeroUsize::new(1).unwrap())
 }
 
 
@@ -434,7 +436,7 @@ mod tests {
 
     #[test]
     fn test_get() {
-        let num = super::get();
+        let num: usize = super::get().into();
         if let Some(n) = env_var("NUM_CPUS_TEST_GET") {
             assert_eq!(num, n);
         } else {
@@ -445,7 +447,7 @@ mod tests {
 
     #[test]
     fn test_get_physical() {
-        let num = super::get_physical();
+        let num: usize = super::get_physical().into();
         if let Some(n) = env_var("NUM_CPUS_TEST_GET_PHYSICAL") {
             assert_eq!(num, n);
         } else {
