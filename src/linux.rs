@@ -241,7 +241,10 @@ impl MountInfo {
         let mnt_root = some!(fields.nth(3));
         let mnt_point = some!(fields.nth(0));
 
-        if fields.nth(3) != Some("cgroup") {
+        if fields.find(|&x| x == "-").is_none() {
+            return None;
+        }
+        if fields.nth(0) != Some("cgroup") {
             return None;
         }
 
@@ -300,6 +303,37 @@ mod tests {
             Path::new($base)
                 $(.join($path))+
         })
+    }
+
+    #[test]
+    fn test_parse_mountinfo_line() {
+        let cases = &[
+            // no optional fields
+            (
+                "7 5 0:6 / /sys/fs/cgroup/cpu,cpuacct rw,noatime - cgroup cgroup rw,cpu,cpuacct",
+                "/",
+                "/sys/fs/cgroup/cpu,cpuacct",
+            ),
+            // one optional field
+            (
+                "7 5 0:6 / /sys/fs/cgroup/cpu,cpuacct rw,noatime shared:7 - cgroup cgroup rw,cpu,cpuacct",
+                "/",
+                "/sys/fs/cgroup/cpu,cpuacct",
+            ),
+            // multiple optional fields
+            (
+                "7 5 0:6 / /sys/fs/cgroup/cpu,cpuacct rw,noatime shared:7 master:2 - cgroup cgroup rw,cpu,cpuacct",
+                "/",
+                "/sys/fs/cgroup/cpu,cpuacct",
+            ),
+        ];
+
+        for &(line, root, mount_point) in cases.iter() {
+            let mnt_info = MountInfo::parse_line(line.to_string()).unwrap();
+
+            assert_eq!(mnt_info.root, root);
+            assert_eq!(mnt_info.mount_point, mount_point);
+        }
     }
 
     #[test]
