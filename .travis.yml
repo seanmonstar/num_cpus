@@ -61,8 +61,7 @@ matrix:
     # FreeBSD
     - env: TARGET=x86_64-unknown-freebsd
     # Fuchsia
-    # FIXME: figure out why target is missing and re-enable
-    #- env: TARGET=x86_64-unknown-fuchsia
+    - env: TARGET=x86_64-fuchsia
     # NetBSD
     - env: TARGET=x86_64-unknown-netbsd
     # Emscripten
