@@ -418,7 +418,7 @@ fn get_num_cpus() -> usize {
         static HARDWARE_CONCURRENCY: usize;
     }
 
-    std::cmp::min(*HARDWARE_CONCURRENCY, 1)
+    std::cmp::max(*HARDWARE_CONCURRENCY, 1)
 }
 
 #[cfg(not(any(
