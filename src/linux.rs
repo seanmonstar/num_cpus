@@ -7,7 +7,6 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Once;
 
-
 macro_rules! debug {
     ($($args:expr),*) => ({
         if false {
@@ -166,13 +165,11 @@ struct Subsys {
 }
 
 impl Cgroup {
-    const fn new(dir: PathBuf) -> Cgroup {
-        Cgroup {
-            base: dir,
-        }
+    const fn new(dir: PathBuf) -> Self {
+        Self { base: dir }
     }
 
-    fn translate(mntinfo: MountInfo, subsys: Subsys) -> Option<Cgroup> {
+    fn translate(mntinfo: MountInfo, subsys: Subsys) -> Option<Self> {
         // Translate the subsystem directory via the host paths.
         debug!(
             "subsys = {:?}; root = {:?}; mount_point = {:?}",
@@ -186,7 +183,7 @@ impl Cgroup {
         // join(mp.MountPoint, relPath)
         let mut path = PathBuf::from(mntinfo.mount_point);
         path.push(rel_from_root);
-        Some(Cgroup::new(path))
+        Some(Self::new(path))
     }
 
     fn cpu_quota(&self) -> Option<usize> {
@@ -223,7 +220,7 @@ impl Cgroup {
 }
 
 impl MountInfo {
-    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<MountInfo> {
+    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<Self> {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
@@ -232,7 +229,7 @@ impl MountInfo {
             .find_map(Self::parse_line)
     }
 
-    fn parse_line(line: String) -> Option<MountInfo> {
+    fn parse_line(line: String) -> Option<Self> {
         let mut fields = line.split(' ');
 
         let mnt_root = some!(fields.nth(3));
@@ -249,7 +246,7 @@ impl MountInfo {
             return None;
         }
 
-        Some(MountInfo {
+        Some(Self {
             root: mnt_root.to_owned(),
             mount_point: mnt_point.to_owned(),
         })
@@ -257,7 +254,7 @@ impl MountInfo {
 }
 
 impl Subsys {
-    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<Subsys> {
+    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<Self> {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
@@ -266,7 +263,7 @@ impl Subsys {
             .find_map(Self::parse_line)
     }
 
-    fn parse_line(line: String) -> Option<Subsys> {
+    fn parse_line(line: String) -> Option<Self> {
         // Example format:
         // 11:cpu,cpuacct:/
         let mut fields = line.split(':');
@@ -277,15 +274,16 @@ impl Subsys {
             return None;
         }
 
-        fields.next().map(|path| Subsys { base: path.to_owned() })
+        fields.next().map(|path| Self {
+            base: path.to_string(),
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
     use super::{Cgroup, MountInfo, Subsys};
-
+    use std::path::{Path, PathBuf};
 
     static FIXTURES_PROC: &str = "fixtures/cgroups/proc/cgroups";
 
@@ -339,7 +337,6 @@ mod tests {
                 "/docker/01abcd/large",
                 Some("/sys/fs/cgroup/cpu/large"),
             ),
-
             // fails
             ("/docker/01abcd", "/sys/fs/cgroup/cpu", "/", None),
             ("/docker/01abcd", "/sys/fs/cgroup/cpu", "/docker", None),
