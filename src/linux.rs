@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Once;
 
-use libc;
 
 macro_rules! debug {
     ($($args:expr),*) => ({
