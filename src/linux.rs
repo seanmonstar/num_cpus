@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::mem;
+use std::mem::MaybeUninit;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Once;
@@ -36,12 +37,12 @@ pub fn get_num_cpus() -> usize {
 }
 
 fn logical_cpus() -> usize {
-    let mut set: libc::cpu_set_t = unsafe { mem::zeroed() };
-    if unsafe { libc::sched_getaffinity(0, mem::size_of::<libc::cpu_set_t>(), &mut set) } == 0 {
+    let mut set = MaybeUninit::<libc::cpu_set_t>::uninit();
+    if unsafe { libc::sched_getaffinity(0, mem::size_of::<libc::cpu_set_t>(), set.as_mut_ptr()) } == 0 {
         let mut count: u32 = 0;
         for i in 0..libc::CPU_SETSIZE as usize {
-            if unsafe { libc::CPU_ISSET(i, &set) } {
-                count += 1
+            if unsafe { libc::CPU_ISSET(i, &set.as_ptr().read()) } {
+                count += 1;
             }
         }
         count as usize
