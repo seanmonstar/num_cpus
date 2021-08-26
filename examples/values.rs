@@ -1,4 +1,4 @@
-extern crate num_cpus;
+use num_cpus;
 
 fn main() {
     println!("Logical CPUs: {}", num_cpus::get());
