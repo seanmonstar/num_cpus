@@ -37,7 +37,9 @@ pub fn get_num_cpus() -> usize {
 
 fn logical_cpus() -> usize {
     let mut set = MaybeUninit::<libc::cpu_set_t>::uninit();
-    if unsafe { libc::sched_getaffinity(0, mem::size_of::<libc::cpu_set_t>(), set.as_mut_ptr()) } == 0 {
+    if unsafe { libc::sched_getaffinity(0, mem::size_of::<libc::cpu_set_t>(), set.as_mut_ptr()) }
+        == 0
+    {
         let mut count: u32 = 0;
         for i in 0..libc::CPU_SETSIZE as usize {
             if unsafe { libc::CPU_ISSET(i, &set.as_ptr().read()) } {
