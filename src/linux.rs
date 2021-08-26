@@ -166,7 +166,7 @@ struct Subsys {
 }
 
 impl Cgroup {
-    fn new(dir: PathBuf) -> Cgroup {
+    const fn new(dir: PathBuf) -> Cgroup {
         Cgroup {
             base: dir,
         }
