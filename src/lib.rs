@@ -40,7 +40,7 @@ extern crate hermit_abi;
 #[cfg(target_os = "linux")]
 mod linux;
 #[cfg(target_os = "linux")]
-use linux::{get_num_cpus, get_num_physical_cpus};
+use crate::linux::{get_num_cpus, get_num_physical_cpus};
 
 /// Returns the number of available CPUs of the current system.
 ///
