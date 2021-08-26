@@ -137,7 +137,7 @@ fn init_cgroups() {
 
             CGROUPS_CPUS.store(count, Ordering::SeqCst);
         }
-        None => return,
+        None => {},
     }
 }
 
@@ -239,7 +239,7 @@ impl MountInfo {
         let mut fields = line.split(' ');
 
         let mnt_root = some!(fields.nth(3));
-        let mnt_point = some!(fields.nth(0));
+        let mnt_point = some!(fields.next());
 
         if fields.nth(3) != Some("cgroup") {
             return None;
@@ -291,9 +291,9 @@ mod tests {
     use super::{Cgroup, MountInfo, Subsys};
 
 
-    static FIXTURES_PROC: &'static str = "fixtures/cgroups/proc/cgroups";
+    static FIXTURES_PROC: &str = "fixtures/cgroups/proc/cgroups";
 
-    static FIXTURES_CGROUPS: &'static str = "fixtures/cgroups/cgroups";
+    static FIXTURES_CGROUPS: &str = "fixtures/cgroups/cgroups";
 
     macro_rules! join {
         ($base:expr, $($path:expr),+) => ({
@@ -387,7 +387,7 @@ mod tests {
             };
 
             let actual = Cgroup::translate(mnt_info, subsys).map(|c| c.base);
-            let expected = expected.map(|s| PathBuf::from(s));
+            let expected = expected.map(PathBuf::from);
             assert_eq!(actual, expected);
         }
     }
