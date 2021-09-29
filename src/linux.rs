@@ -2,11 +2,10 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::mem;
+use std::mem::MaybeUninit;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Once;
-
-use libc;
 
 macro_rules! debug {
     ($($args:expr),*) => ({
@@ -18,7 +17,7 @@ macro_rules! debug {
 }
 
 macro_rules! some {
-    ($e:expr) => ({
+    ($e:expr) => {{
         match $e {
             Some(v) => v,
             None => {
@@ -26,7 +25,7 @@ macro_rules! some {
                 return None;
             }
         }
-    })
+    }};
 }
 
 pub fn get_num_cpus() -> usize {
@@ -37,12 +36,14 @@ pub fn get_num_cpus() -> usize {
 }
 
 fn logical_cpus() -> usize {
-    let mut set: libc::cpu_set_t = unsafe { mem::zeroed() };
-    if unsafe { libc::sched_getaffinity(0, mem::size_of::<libc::cpu_set_t>(), &mut set) } == 0 {
+    let mut set = MaybeUninit::<libc::cpu_set_t>::uninit();
+    if unsafe { libc::sched_getaffinity(0, mem::size_of::<libc::cpu_set_t>(), set.as_mut_ptr()) }
+        == 0
+    {
         let mut count: u32 = 0;
         for i in 0..libc::CPU_SETSIZE as usize {
-            if unsafe { libc::CPU_ISSET(i, &set) } {
-                count += 1
+            if unsafe { libc::CPU_ISSET(i, &set.as_ptr().read()) } {
+                count += 1;
             }
         }
         count as usize
@@ -137,7 +138,7 @@ fn init_cgroups() {
 
             CGROUPS_CPUS.store(count, Ordering::SeqCst);
         }
-        None => return,
+        None => {}
     }
 }
 
@@ -166,19 +167,15 @@ struct Subsys {
 }
 
 impl Cgroup {
-    fn new(dir: PathBuf) -> Cgroup {
-        Cgroup {
-            base: dir,
-        }
+    const fn new(dir: PathBuf) -> Self {
+        Self { base: dir }
     }
 
-    fn translate(mntinfo: MountInfo, subsys: Subsys) -> Option<Cgroup> {
+    fn translate(mntinfo: MountInfo, subsys: Subsys) -> Option<Self> {
         // Translate the subsystem directory via the host paths.
         debug!(
             "subsys = {:?}; root = {:?}; mount_point = {:?}",
-            subsys.base,
-            mntinfo.root,
-            mntinfo.mount_point
+            subsys.base, mntinfo.root, mntinfo.mount_point
         );
 
         let rel_from_root = some!(Path::new(&subsys.base).strip_prefix(&mntinfo.root).ok());
@@ -188,7 +185,7 @@ impl Cgroup {
         // join(mp.MountPoint, relPath)
         let mut path = PathBuf::from(mntinfo.mount_point);
         path.push(rel_from_root);
-        Some(Cgroup::new(path))
+        Some(Self::new(path))
     }
 
     fn cpu_quota(&self) -> Option<usize> {
@@ -225,21 +222,20 @@ impl Cgroup {
 }
 
 impl MountInfo {
-    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<MountInfo> {
+    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<Self> {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
         file.lines()
-            .filter_map(|result| result.ok())
-            .filter_map(MountInfo::parse_line)
-            .next()
+            .filter_map(Result::ok)
+            .find_map(Self::parse_line)
     }
 
-    fn parse_line(line: String) -> Option<MountInfo> {
+    fn parse_line(line: String) -> Option<Self> {
         let mut fields = line.split(' ');
 
         let mnt_root = some!(fields.nth(3));
-        let mnt_point = some!(fields.nth(0));
+        let mnt_point = some!(fields.next());
 
         if fields.nth(3) != Some("cgroup") {
             return None;
@@ -252,7 +248,7 @@ impl MountInfo {
             return None;
         }
 
-        Some(MountInfo {
+        Some(Self {
             root: mnt_root.to_owned(),
             mount_point: mnt_point.to_owned(),
         })
@@ -260,17 +256,16 @@ impl MountInfo {
 }
 
 impl Subsys {
-    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<Subsys> {
+    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<Self> {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
         file.lines()
-            .filter_map(|result| result.ok())
-            .filter_map(Subsys::parse_line)
-            .next()
+            .filter_map(std::result::Result::ok)
+            .find_map(Self::parse_line)
     }
 
-    fn parse_line(line: String) -> Option<Subsys> {
+    fn parse_line(line: String) -> Option<Self> {
         // Example format:
         // 11:cpu,cpuacct:/
         let mut fields = line.split(':');
@@ -281,19 +276,20 @@ impl Subsys {
             return None;
         }
 
-        fields.next().map(|path| Subsys { base: path.to_owned() })
+        fields.next().map(|path| Self {
+            base: path.to_string(),
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::{Path, PathBuf};
     use super::{Cgroup, MountInfo, Subsys};
+    use std::path::{Path, PathBuf};
 
+    static FIXTURES_PROC: &str = "fixtures/cgroups/proc/cgroups";
 
-    static FIXTURES_PROC: &'static str = "fixtures/cgroups/proc/cgroups";
-
-    static FIXTURES_CGROUPS: &'static str = "fixtures/cgroups/cgroups";
+    static FIXTURES_CGROUPS: &str = "fixtures/cgroups/cgroups";
 
     macro_rules! join {
         ($base:expr, $($path:expr),+) => ({
@@ -324,12 +320,7 @@ mod tests {
     #[test]
     fn test_cgroup_mount() {
         let cases = &[
-            (
-                "/",
-                "/sys/fs/cgroup/cpu",
-                "/",
-                Some("/sys/fs/cgroup/cpu"),
-            ),
+            ("/", "/sys/fs/cgroup/cpu", "/", Some("/sys/fs/cgroup/cpu")),
             (
                 "/docker/01abcd",
                 "/sys/fs/cgroup/cpu",
@@ -348,27 +339,10 @@ mod tests {
                 "/docker/01abcd/large",
                 Some("/sys/fs/cgroup/cpu/large"),
             ),
-
             // fails
-
-            (
-                "/docker/01abcd",
-                "/sys/fs/cgroup/cpu",
-                "/",
-                None,
-            ),
-            (
-                "/docker/01abcd",
-                "/sys/fs/cgroup/cpu",
-                "/docker",
-                None,
-            ),
-            (
-                "/docker/01abcd",
-                "/sys/fs/cgroup/cpu",
-                "/elsewhere",
-                None,
-            ),
+            ("/docker/01abcd", "/sys/fs/cgroup/cpu", "/", None),
+            ("/docker/01abcd", "/sys/fs/cgroup/cpu", "/docker", None),
+            ("/docker/01abcd", "/sys/fs/cgroup/cpu", "/elsewhere", None),
             (
                 "/docker/01abcd",
                 "/sys/fs/cgroup/cpu",
@@ -387,7 +361,7 @@ mod tests {
             };
 
             let actual = Cgroup::translate(mnt_info, subsys).map(|c| c.base);
-            let expected = expected.map(|s| PathBuf::from(s));
+            let expected = expected.map(PathBuf::from);
             assert_eq!(actual, expected);
         }
     }

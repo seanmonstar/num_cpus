@@ -21,7 +21,7 @@ num_cpus = "1.0"
 In your `main.rs` or `lib.rs`:
 
 ```rust
-extern crate num_cpus;
+use num_cpus;
 
 // count logical cores this process could try to use
 let num = num_cpus::get();
