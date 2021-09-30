@@ -141,10 +141,9 @@ fn init_cgroups() {
     }
 }
 
-fn load_cgroups<P1, P2>(cgroup_proc: P1, mountinfo_proc: P2) -> Option<usize>
+fn load_cgroups<P>(cgroup_proc: P, mountinfo_proc: P) -> Option<usize>
 where
-    P1: AsRef<Path>,
-    P2: AsRef<Path>,
+    P: AsRef<Path>,
 {
     let subsys = some!(Subsys::load_cpu(cgroup_proc));
     let mntinfo = some!(MountInfo::load_cpu(mountinfo_proc));
