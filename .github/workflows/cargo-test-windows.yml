@@ -1,0 +1,22 @@
+name: Cargo Test Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Make clippy happy
+      run: cargo clippy
+    - name: Run tests
+      run: cargo test --verbose
