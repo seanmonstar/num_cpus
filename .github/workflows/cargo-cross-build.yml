@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Run check
+    - name: Run build
       run: |
         rustup default ${{ matrix.rust }}
         rustup target add ${{ matrix.target }}
