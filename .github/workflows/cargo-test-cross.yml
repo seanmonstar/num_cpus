@@ -1,4 +1,4 @@
-name: Cargo Test Linux
+name: Cargo Test Cross
 
 on:
   push:
