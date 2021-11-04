@@ -1,4 +1,4 @@
-name: Cargo Test Cross
+name: Cargo Cross Build
 
 on:
   push:
@@ -25,4 +25,4 @@ jobs:
       run: |
         rustup default ${{ matrix.rust }}
         rustup target add ${{ matrix.target }}
-        cargo check --target ${{ matrix.target }}
+        cargo build --verbose --target ${{ matrix.target }}
