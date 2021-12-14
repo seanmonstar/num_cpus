@@ -1,0 +1,27 @@
+name: Test Docker Cgroup
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Test Cgroup
+      run: |
+        docker build -f ci/cgroups/Dockerfile -t num-cpus-cgroups .
+        # Test without cgroups
+        docker run -e NUM_CPUS_TEST_GET=2 num-cpus-cgroups
+        # Only 1 CPU
+        docker run --cpus="1" -e NUM_CPUS_TEST_GET=1 num-cpus-cgroups
+        # 1.5 CPUs
+        docker run --cpus="1.5" -e NUM_CPUS_TEST_GET=2 num-cpus-cgroups

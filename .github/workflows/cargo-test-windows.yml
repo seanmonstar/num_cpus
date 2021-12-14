@@ -1,0 +1,28 @@
+name: Cargo Test Windows
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        rust: [stable, beta, nightly]
+        target: [x86_64-pc-windows-gnu, x86_64-pc-windows-msvc]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: |
+        rustup default ${{ matrix.rust }}
+        rustup target add ${{ matrix.target }}
+        cargo test --verbose --target ${{ matrix.target }}

@@ -1,0 +1,58 @@
+name: Cargo Cross Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        rust: [stable]
+        target:
+        - aarch64-unknown-linux-gnu
+        - i686-pc-windows-gnu
+        - i686-pc-windows-msvc
+        - i686-unknown-linux-gnu
+        - aarch64-apple-darwin
+        - aarch64-pc-windows-msvc
+        - aarch64-unknown-linux-musl
+        - arm-unknown-linux-gnueabi
+        - arm-unknown-linux-gnueabihf
+        - armv7-unknown-linux-gnueabihf
+        - mips-unknown-linux-gnu
+        - mips64-unknown-linux-gnuabi64
+        - mips64el-unknown-linux-gnuabi64
+        - mipsel-unknown-linux-gnu
+        - powerpc-unknown-linux-gnu
+        - powerpc64-unknown-linux-gnu
+        - powerpc64le-unknown-linux-gnu
+        - riscv64gc-unknown-linux-gnu
+        - s390x-unknown-linux-gnu
+        - x86_64-unknown-freebsd
+        - x86_64-unknown-illumos
+        - x86_64-unknown-netbsd
+        - i686-linux-android
+        - x86_64-linux-android
+        - arm-linux-androideabi
+        - aarch64-linux-android
+        - x86_64-apple-ios
+        - asmjs-unknown-emscripten
+        - aarch64-apple-ios
+        - aarch64-apple-ios-sim
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run build
+      run: |
+        rustup default ${{ matrix.rust }}
+        rustup target add ${{ matrix.target }}
+        cargo build --verbose --target ${{ matrix.target }}

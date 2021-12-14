@@ -1,0 +1,28 @@
+name: Cargo Test macOS
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        rust: [stable, beta, nightly]
+        target: [x86_64-apple-darwin, x86_64-apple-ios, aarch64-apple-darwin]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: |
+        rustup default ${{ martix.rust }}
+        rustup target add ${{ matrix.target }}
+        cargo test --verbose --target ${{ matrix.target }}
