@@ -240,7 +240,11 @@ impl MountInfo {
         // Note: there could be zero or more optional fields before hyphen.
         // See: https://man7.org/linux/man-pages/man5/proc.5.html
         // 7 5 0:6 / /sys/fs/cgroup/cpu,cpuacct rw,nosuid,nodev,noexec,relatime shared:7 <-> cgroup cgroup rw,cpu,cpuacct
-        fields.find(|&s| s == "-")?;
+        // Note: we cannot use `?` here because we need to support Rust 1.13.
+        match fields.find(|&s| s == "-") {
+            Some(_) => {}
+            None => return None,
+        };
 
         // 7 5 0:6 / /sys/fs/cgroup/cpu,cpuacct rw,nosuid,nodev,noexec,relatime shared:7 - <cgroup> cgroup rw,cpu,cpuacct
         if fields.next() != Some("cgroup") {
@@ -295,9 +299,10 @@ mod tests {
     use super::{Cgroup, MountInfo, Subsys};
     use std::path::{Path, PathBuf};
 
-    static FIXTURES_PROC: &str = "fixtures/cgroups/proc/cgroups";
+    // `static_in_const` feature is not stable in Rust 1.13.
+    static FIXTURES_PROC: &'static str = "fixtures/cgroups/proc/cgroups";
 
-    static FIXTURES_CGROUPS: &str = "fixtures/cgroups/cgroups";
+    static FIXTURES_CGROUPS: &'static str = "fixtures/cgroups/cgroups";
 
     macro_rules! join {
         ($base:expr, $($path:expr),+) => ({
