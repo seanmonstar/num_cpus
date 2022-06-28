@@ -126,6 +126,11 @@ fn init_cgroups() {
     // Should only be called once
     debug_assert!(CGROUPS_CPUS.load(Ordering::SeqCst) == 0);
 
+    // Fails in Miri by default (cannot open files), and Miri does not have parallelism anyway.
+    if cfg!(miri) {
+        return;
+    }
+
     if let Some(quota) = load_cgroups("/proc/self/cgroup", "/proc/self/mountinfo") {
         if quota == 0 {
             return;
