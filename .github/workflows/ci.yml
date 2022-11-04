@@ -34,7 +34,7 @@ jobs:
           - x86_64-unknown-linux-gnu
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Run tests
       run: |
         rustup default ${{ matrix.rust }}
@@ -55,7 +55,7 @@ jobs:
           - x86_64-unknown-linux-musl
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Run tests
       run: |
         rustup default ${{ matrix.rust }}
@@ -75,7 +75,7 @@ jobs:
           - x86_64-apple-darwin
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Run tests
       run: |
         rustup default ${{ matrix.rust }}
@@ -96,7 +96,7 @@ jobs:
           - x86_64-pc-windows-msvc
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Run tests
       run: |
         rustup default ${{ matrix.rust }}
@@ -143,7 +143,7 @@ jobs:
           - aarch64-apple-ios-sim
           - aarch64-apple-darwin
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Run build
       run: |
         rustup default ${{ matrix.rust }}
@@ -154,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Test Cgroup
       run: |
         docker build -f ci/cgroups/Dockerfile -t num-cpus-cgroups .
