@@ -15,4 +15,4 @@ readme = "README.md"
 libc = "0.2.26"
 
 [target.'cfg(all(any(target_arch = "x86_64", target_arch = "aarch64"), target_os = "hermit"))'.dependencies]
-hermit-abi = "0.1.3"
+hermit-abi = "0.2.6"
