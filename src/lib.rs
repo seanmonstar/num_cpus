@@ -2,7 +2,7 @@
 //! current system.
 //!
 //! Sometimes the CPU will exaggerate the number of CPUs it contains, because it can use
-//! [processor tricks] to deliver increased performance when there are more threads. This 
+//! [processor tricks] to deliver increased performance when there are more threads. This
 //! crate provides methods to get both the logical and physical numbers of cores.
 //!
 //! This information can be used as a guide to how many tasks can be run in parallel.
@@ -92,7 +92,7 @@ pub fn get() -> usize {
 /// let physical_cpus = num_cpus::get_physical();
 /// if logical_cpus > physical_cpus {
 ///     println!("We have simultaneous multithreading with about {:.2} \
-///               logical cores to 1 physical core.", 
+///               logical cores to 1 physical core.",
 ///               (logical_cpus as f64) / (physical_cpus as f64));
 /// } else if logical_cpus == physical_cpus {
 ///     println!("Either we don't have simultaneous multithreading, or our \
@@ -110,7 +110,7 @@ pub fn get_physical() -> usize {
 }
 
 
-#[cfg(not(any(target_os = "linux", target_os = "windows", target_os="macos", target_os="openbsd")))]
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os="macos", target_os="openbsd", target_os="freebsd")))]
 #[inline]
 fn get_num_physical_cpus() -> usize {
     // Not implemented, fall back
@@ -255,6 +255,29 @@ fn get_num_cpus() -> usize {
         }
     }
     cpus as usize
+}
+
+#[cfg(target_os = "freebsd")]
+fn get_num_physical_cpus() -> usize {
+    use std::ptr;
+
+    let mut cpus: libc::c_uint = 0;
+    let mut cpus_size = std::mem::size_of_val(&cpus);
+    let rc: libc::c_int;
+
+    const MIB: &[u8] = b"kern.smp.cores\0";
+    unsafe {
+        rc = libc::sysctlbyname(MIB.as_ptr() as *const _ as *const _,
+                     &mut cpus as *mut _ as *mut _,
+                     &mut cpus_size as *mut _ as *mut _,
+                     ptr::null_mut(),
+                     0);
+    }
+    if rc < 0 {
+        get_num_cpus()
+    } else {
+        cpus as usize
+    }
 }
 
 #[cfg(target_os = "openbsd")]
