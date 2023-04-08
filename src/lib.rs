@@ -238,7 +238,7 @@ fn get_num_cpus() -> usize {
 fn get_num_cpus() -> usize {
     use std::ptr;
 
-    #[cfg(any(target_os = "freebsd"))]
+    #[cfg(target_os = "freebsd")]
     {
         let cpus = get_cpuset_cpus();
         if cpus > 0 {
@@ -269,7 +269,7 @@ fn get_num_cpus() -> usize {
     cpus as usize
 }
 
-#[cfg(any(target_os = "freebsd"))]
+#[cfg(target_os = "freebsd")]
 fn get_cpuset_cpus() -> usize {
     use std::mem;
 
