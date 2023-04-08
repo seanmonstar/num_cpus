@@ -66,9 +66,12 @@ use linux::{get_num_cpus, get_num_physical_cpus};
 ///
 /// This will also check [cgroups], frequently used in containers to constrain CPU usage.
 ///
+/// Similarly on FreeBSD this will check the current [cpuset affinity].
+///
 /// [smt]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
 /// [sched affinity]: http://www.gnu.org/software/libc/manual/html_node/CPU-Affinity.html
 /// [cgroups]: https://www.kernel.org/doc/Documentation/cgroup-v1/cgroups.txt
+/// [cpuset affinity]: https://man.freebsd.org/cgi/man.cgi?query=cpuset&sektion=2
 #[inline]
 pub fn get() -> usize {
     get_num_cpus()
@@ -80,7 +83,8 @@ pub fn get() -> usize {
 ///
 /// # Note
 ///
-/// Physical count is supported only on Linux, mac OS and Windows platforms.
+/// Physical count is supported only on Linux, mac OS, FreeBSD, OpenBSD, and
+/// Windows platforms.
 /// On other platforms, or if the physical count fails on supported platforms,
 /// this function returns the same as [`get()`], which is the number of logical
 /// CPUS.
@@ -234,6 +238,14 @@ fn get_num_cpus() -> usize {
 fn get_num_cpus() -> usize {
     use std::ptr;
 
+    #[cfg(any(target_os = "freebsd"))]
+    {
+        let cpus = get_cpuset_cpus();
+        if cpus > 0 {
+            return cpus;
+        }
+    }
+
     let mut cpus: libc::c_uint = 0;
     let mut cpus_size = std::mem::size_of_val(&cpus);
 
@@ -257,6 +269,27 @@ fn get_num_cpus() -> usize {
     cpus as usize
 }
 
+#[cfg(any(target_os = "freebsd"))]
+fn get_cpuset_cpus() -> usize {
+    use std::mem;
+
+    let mut set: libc::cpuset_t = unsafe { mem::zeroed() };
+    if unsafe {
+        libc::cpuset_getaffinity(
+            libc::CPU_LEVEL_WHICH,
+            libc::CPU_WHICH_PID,
+            -1,
+            mem::size_of::<libc::cpuset_t>(),
+            &mut set,
+        )
+    } == 0
+    {
+        unsafe { libc::CPU_COUNT(&set) as usize }
+    } else {
+        0
+    }
+}
+
 #[cfg(target_os = "freebsd")]
 fn get_num_physical_cpus() -> usize {
     use std::ptr;
@@ -267,11 +300,13 @@ fn get_num_physical_cpus() -> usize {
 
     const MIB: &[u8] = b"kern.smp.cores\0";
     unsafe {
-        rc = libc::sysctlbyname(MIB.as_ptr() as *const _ as *const _,
-                     &mut cpus as *mut _ as *mut _,
-                     &mut cpus_size as *mut _ as *mut _,
-                     ptr::null_mut(),
-                     0);
+        rc = libc::sysctlbyname(
+            MIB.as_ptr() as *const _ as *const _,
+            &mut cpus as *mut _ as *mut _,
+            &mut cpus_size as *mut _ as *mut _,
+            ptr::null_mut(),
+            0,
+        );
     }
     if rc < 0 {
         get_num_cpus()
