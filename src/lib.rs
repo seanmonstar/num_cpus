@@ -239,11 +239,8 @@ fn get_num_cpus() -> usize {
     use std::ptr;
 
     #[cfg(target_os = "freebsd")]
-    {
-        let cpus = get_cpuset_cpus();
-        if cpus > 0 {
-            return cpus;
-        }
+    if let Some(cpus) = get_cpuset_cpus() {
+        return cpus;
     }
 
     let mut cpus: libc::c_uint = 0;
@@ -270,7 +267,7 @@ fn get_num_cpus() -> usize {
 }
 
 #[cfg(target_os = "freebsd")]
-fn get_cpuset_cpus() -> usize {
+fn get_cpuset_cpus() -> Option<usize> {
     use std::mem;
 
     let mut set: libc::cpuset_t = unsafe { mem::zeroed() };
@@ -284,9 +281,9 @@ fn get_cpuset_cpus() -> usize {
         )
     } == 0
     {
-        unsafe { libc::CPU_COUNT(&set) as usize }
+        Some(unsafe { libc::CPU_COUNT(&set) as usize })
     } else {
-        0
+        None
     }
 }
 
