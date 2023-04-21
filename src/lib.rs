@@ -239,8 +239,10 @@ fn get_num_cpus() -> usize {
     use std::ptr;
 
     #[cfg(target_os = "freebsd")]
-    if let Some(cpus) = get_cpuset_cpus() {
-        return cpus;
+    {
+        if let Some(cpus) = get_cpuset_cpus() {
+            return cpus;
+        }
     }
 
     let mut cpus: libc::c_uint = 0;
