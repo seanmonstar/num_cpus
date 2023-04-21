@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - freebsd
 
 env:
   RUST_BACKTRACE: 1
@@ -17,6 +18,7 @@ jobs:
       - msrv
       - test-linux
       - test-macos
+      - test-freebsd
       - test-windows
       - build-cross
       - test-cgroups
@@ -149,6 +151,24 @@ jobs:
         rustup default ${{ matrix.rust }}
         rustup target add ${{ matrix.target }}
         cargo build --verbose --target ${{ matrix.target }}
+
+  test-freebsd:
+    runs-on: macos-12
+    steps:
+    - uses: actions/checkout@v3
+    - id: test-cpuset
+      uses: vmactions/freebsd-vm@v0
+      with:
+        envs: 'RUST_BACKTRACE CARGO_TERM_COLOR'
+        usesh: true
+        copyback: false
+        prepare: |
+          pkg install -y rust
+        run: |
+          cargo test --verbose
+          NUM_CPUS_TEST_GET=1 cpuset -l 0 cargo test --verbose
+          NUM_CPUS_TEST_GET=2 cpuset -l 0,1 cargo test --verbose
+
 
   test-cgroups:
     runs-on: ubuntu-latest
