@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - freebsd
 
 env:
   RUST_BACKTRACE: 1
