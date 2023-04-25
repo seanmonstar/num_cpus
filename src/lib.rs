@@ -2,7 +2,7 @@
 //! current system.
 //!
 //! Sometimes the CPU will exaggerate the number of CPUs it contains, because it can use
-//! [processor tricks] to deliver increased performance when there are more threads. This 
+//! [processor tricks] to deliver increased performance when there are more threads. This
 //! crate provides methods to get both the logical and physical numbers of cores.
 //!
 //! This information can be used as a guide to how many tasks can be run in parallel.
@@ -66,9 +66,12 @@ use linux::{get_num_cpus, get_num_physical_cpus};
 ///
 /// This will also check [cgroups], frequently used in containers to constrain CPU usage.
 ///
+/// Similarly on FreeBSD this will check the current [cpuset affinity].
+///
 /// [smt]: https://en.wikipedia.org/wiki/Simultaneous_multithreading
 /// [sched affinity]: http://www.gnu.org/software/libc/manual/html_node/CPU-Affinity.html
 /// [cgroups]: https://www.kernel.org/doc/Documentation/cgroup-v1/cgroups.txt
+/// [cpuset affinity]: https://man.freebsd.org/cgi/man.cgi?query=cpuset&sektion=2
 #[inline]
 pub fn get() -> usize {
     get_num_cpus()
@@ -80,7 +83,8 @@ pub fn get() -> usize {
 ///
 /// # Note
 ///
-/// Physical count is supported only on Linux, mac OS and Windows platforms.
+/// Physical count is supported only on Linux, mac OS, FreeBSD, OpenBSD, and
+/// Windows platforms.
 /// On other platforms, or if the physical count fails on supported platforms,
 /// this function returns the same as [`get()`], which is the number of logical
 /// CPUS.
@@ -92,7 +96,7 @@ pub fn get() -> usize {
 /// let physical_cpus = num_cpus::get_physical();
 /// if logical_cpus > physical_cpus {
 ///     println!("We have simultaneous multithreading with about {:.2} \
-///               logical cores to 1 physical core.", 
+///               logical cores to 1 physical core.",
 ///               (logical_cpus as f64) / (physical_cpus as f64));
 /// } else if logical_cpus == physical_cpus {
 ///     println!("Either we don't have simultaneous multithreading, or our \
@@ -110,7 +114,7 @@ pub fn get_physical() -> usize {
 }
 
 
-#[cfg(not(any(target_os = "linux", target_os = "windows", target_os="macos", target_os="openbsd")))]
+#[cfg(not(any(target_os = "linux", target_os = "windows", target_os="macos", target_os="openbsd", target_os="freebsd")))]
 #[inline]
 fn get_num_physical_cpus() -> usize {
     // Not implemented, fall back
@@ -234,6 +238,13 @@ fn get_num_cpus() -> usize {
 fn get_num_cpus() -> usize {
     use std::ptr;
 
+    #[cfg(target_os = "freebsd")]
+    {
+        if let Some(cpus) = get_cpuset_cpus() {
+            return cpus;
+        }
+    }
+
     let mut cpus: libc::c_uint = 0;
     let mut cpus_size = std::mem::size_of_val(&cpus);
 
@@ -255,6 +266,52 @@ fn get_num_cpus() -> usize {
         }
     }
     cpus as usize
+}
+
+#[cfg(target_os = "freebsd")]
+fn get_cpuset_cpus() -> Option<usize> {
+    use std::mem;
+
+    let mut set: libc::cpuset_t = unsafe { mem::zeroed() };
+    if unsafe {
+        libc::cpuset_getaffinity(
+            libc::CPU_LEVEL_WHICH,
+            libc::CPU_WHICH_PID,
+            -1,
+            mem::size_of::<libc::cpuset_t>(),
+            &mut set,
+        )
+    } == 0
+    {
+        Some(unsafe { libc::CPU_COUNT(&set) as usize })
+    } else {
+        None
+    }
+}
+
+#[cfg(target_os = "freebsd")]
+fn get_num_physical_cpus() -> usize {
+    use std::ptr;
+
+    let mut cpus: libc::c_uint = 0;
+    let mut cpus_size = std::mem::size_of_val(&cpus);
+    let rc: libc::c_int;
+
+    const MIB: &[u8] = b"kern.smp.cores\0";
+    unsafe {
+        rc = libc::sysctlbyname(
+            MIB.as_ptr() as *const _ as *const _,
+            &mut cpus as *mut _ as *mut _,
+            &mut cpus_size as *mut _ as *mut _,
+            ptr::null_mut(),
+            0,
+        );
+    }
+    if rc < 0 {
+        get_num_cpus()
+    } else {
+        cpus as usize
+    }
 }
 
 #[cfg(target_os = "openbsd")]
