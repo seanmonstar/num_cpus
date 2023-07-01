@@ -226,11 +226,11 @@ fn get_num_cpus() -> usize {
         fn GetSystemInfo(lpSystemInfo: *mut SYSTEM_INFO);
     }
 
-    unsafe {
-        let mut sysinfo: SYSTEM_INFO = std::mem::zeroed();
-        GetSystemInfo(&mut sysinfo);
+    
+        let mut sysinfo: SYSTEM_INFO = unsafe { std::mem::zeroed() };
+        unsafe { GetSystemInfo(&mut sysinfo) };
         sysinfo.dwNumberOfProcessors as usize
-    }
+    
 }
 
 #[cfg(any(target_os = "freebsd",
