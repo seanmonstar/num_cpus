@@ -433,6 +433,11 @@ fn get_num_cpus() -> usize {
     unsafe { hermit_abi::get_processor_count() }
 }
 
+#[cfg(target_os = "vita")]
+fn get_num_cpus() -> usize {
+    3
+}
+
 #[cfg(not(any(
     target_os = "nacl",
     target_os = "macos",
@@ -449,6 +454,7 @@ fn get_num_cpus() -> usize {
     target_os = "netbsd",
     target_os = "haiku",
     target_os = "hermit",
+    target_os = "vita",
     windows,
 )))]
 fn get_num_cpus() -> usize {
