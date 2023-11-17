@@ -124,10 +124,7 @@ fn get_num_physical_cpus() -> usize {
 
 #[cfg(target_os = "windows")]
 fn get_num_physical_cpus() -> usize {
-    match get_num_physical_cpus_windows() {
-        Some(num) => num,
-        None => get_num_cpus()
-    }
+    get_num_physical_cpus_windows().unwrap_or_else(get_num_cpus)
 }
 
 #[cfg(target_os = "windows")]
@@ -334,10 +331,7 @@ fn get_num_physical_cpus() -> usize {
 
 #[cfg(target_os = "aix")]
 fn get_num_physical_cpus() -> usize {
-    match get_smt_threads_aix() {
-        Some(num) => get_num_cpus() / num,
-        None => get_num_cpus(),
-    }
+    get_num_cpus() / get_smt_threads_aix().unwrap_or(1)
 }
 
 #[cfg(target_os = "aix")]
