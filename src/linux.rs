@@ -30,10 +30,7 @@ macro_rules! some {
 }
 
 pub fn get_num_cpus() -> usize {
-    match cgroups_num_cpus() {
-        Some(n) => n,
-        None => logical_cpus(),
-    }
+    cgroups_num_cpus().unwrap_or_else(logical_cpus)
 }
 
 fn logical_cpus() -> usize {
