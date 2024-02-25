@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::mem;
@@ -9,13 +8,13 @@ use std::sync::Once;
 use libc;
 
 macro_rules! debug {
-    ($($args:expr),*) => ({
-        if false {
-        //if true {
-            println!($($args),*);
-        }
-    });
+    ($($args:tt)*) => ({});
 }
+// macro_rules! debug {
+//     ($($args:expr),*) => ({
+//         println!($($args),*);
+//     });
+// }
 
 macro_rules! some {
     ($e:expr) => {{
@@ -62,36 +61,51 @@ pub fn get_num_physical_cpus() -> usize {
         Err(_) => return get_num_cpus(),
     };
     let reader = BufReader::new(file);
-    let mut map = HashMap::new();
+    let mut core_list = Vec::new();
     let mut physid: u32 = 0;
     let mut cores: usize = 0;
     let mut chgcount = 0;
-    for line in reader.lines().filter_map(|result| result.ok()) {
+    for line in reader.lines() {
+        let line = if let Ok(l) = line { l } else { continue };
+
         let mut it = line.split(':');
         let (key, value) = match (it.next(), it.next()) {
             (Some(key), Some(value)) => (key.trim(), value.trim()),
             _ => continue,
         };
-        if key == "physical id" {
-            match value.parse() {
-                Ok(val) => physid = val,
-                Err(_) => break,
-            };
-            chgcount += 1;
+        match key {
+            "physical id" => {
+                match value.parse() {
+                    Ok(val) => physid = val,
+                    Err(_) => break,
+                };
+                chgcount += 1;
+            }
+            "cpu cores" => {
+                match value.parse() {
+                    Ok(val) => cores = val,
+                    Err(_) => break,
+                };
+                chgcount += 1;
+            }
+            _ => (),
         }
-        if key == "cpu cores" {
-            match value.parse() {
-                Ok(val) => cores = val,
-                Err(_) => break,
-            };
-            chgcount += 1;
-        }
+
         if chgcount == 2 {
-            map.insert(physid, cores);
+            core_list.push((physid, cores));
             chgcount = 0;
         }
     }
-    let count = map.into_iter().fold(0, |acc, (_, cores)| acc + cores);
+
+    core_list.sort_by_key(|&(id, _)| id);
+
+    let mut count = 0;
+    let mut prev = None;
+    for (id, cores) in core_list {
+        if prev == Some(id) { continue }
+        prev = Some(id);
+        count += cores;
+    }
 
     if count == 0 {
         get_num_cpus()
@@ -131,7 +145,7 @@ fn init_cgroups() {
         return;
     }
 
-    if let Some(quota) = load_cgroups("/proc/self/cgroup", "/proc/self/mountinfo") {
+    if let Some(quota) = load_cgroups("/proc/self/cgroup".as_ref(), "/proc/self/mountinfo".as_ref()) {
         if quota == 0 {
             return;
         }
@@ -143,11 +157,7 @@ fn init_cgroups() {
     }
 }
 
-fn load_cgroups<P1, P2>(cgroup_proc: P1, mountinfo_proc: P2) -> Option<usize>
-where
-    P1: AsRef<Path>,
-    P2: AsRef<Path>,
-{
+fn load_cgroups(cgroup_proc: &Path, mountinfo_proc: &Path) -> Option<usize> {
     let subsys = some!(Subsys::load_cpu(cgroup_proc));
     let mntinfo = some!(MountInfo::load_cpu(mountinfo_proc, subsys.version));
     let cgroup = some!(Cgroup::translate(mntinfo, subsys));
@@ -250,14 +260,20 @@ impl Cgroup {
 }
 
 impl MountInfo {
-    fn load_cpu<P: AsRef<Path>>(proc_path: P, version: CgroupVersion) -> Option<MountInfo> {
+    fn load_cpu(proc_path: &Path, version: CgroupVersion) -> Option<MountInfo> {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
-        file.lines()
-            .filter_map(|result| result.ok())
-            .filter_map(MountInfo::parse_line)
-            .find(|mount_info| mount_info.version == version)
+        for line in file.lines() {
+            let mount_info = line.ok().and_then(MountInfo::parse_line);
+
+            if let Some(mount_info) = mount_info {
+                if mount_info.version == version {
+                    return Some(mount_info);
+                }
+            }
+        }
+        None
     }
 
     fn parse_line(line: String) -> Option<MountInfo> {
@@ -305,21 +321,21 @@ impl MountInfo {
 }
 
 impl Subsys {
-    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<Subsys> {
+    fn load_cpu(proc_path: &Path) -> Option<Subsys> {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
-        file.lines()
-            .filter_map(|result| result.ok())
-            .filter_map(Subsys::parse_line)
-            .fold(None, |previous, line| {
-                // already-found v1 trumps v2 since it explicitly specifies its controllers
-                if previous.is_some() && line.version == CgroupVersion::V2 {
-                    return previous;
-                }
+        let mut current = None;
+        for line in file.lines() {
+            let line = line.ok().and_then(Subsys::parse_line);
+            let line = if let Some(l) = line { l } else { continue };
 
-                Some(line)
-            })
+            // v1 trumps v2 since it explicitly specifies its controllers
+            if current.is_none() || line.version == CgroupVersion::V1 {
+                current = Some(line);
+            }
+        }
+        current
     }
 
     fn parse_line(line: String) -> Option<Subsys> {
@@ -369,7 +385,7 @@ mod tests {
             // test only one optional fields
             let path = join!(FIXTURES_PROC, "mountinfo");
 
-            let mnt_info = MountInfo::load_cpu(path, CgroupVersion::V1).unwrap();
+            let mnt_info = MountInfo::load_cpu(&path, CgroupVersion::V1).unwrap();
 
             assert_eq!(mnt_info.root, "/");
             assert_eq!(mnt_info.mount_point, "/sys/fs/cgroup/cpu,cpuacct");
@@ -377,7 +393,7 @@ mod tests {
             // test zero optional field
             let path = join!(FIXTURES_PROC, "mountinfo_zero_opt");
 
-            let mnt_info = MountInfo::load_cpu(path, CgroupVersion::V1).unwrap();
+            let mnt_info = MountInfo::load_cpu(&path, CgroupVersion::V1).unwrap();
 
             assert_eq!(mnt_info.root, "/");
             assert_eq!(mnt_info.mount_point, "/sys/fs/cgroup/cpu,cpuacct");
@@ -385,7 +401,7 @@ mod tests {
             // test multi optional fields
             let path = join!(FIXTURES_PROC, "mountinfo_multi_opt");
 
-            let mnt_info = MountInfo::load_cpu(path, CgroupVersion::V1).unwrap();
+            let mnt_info = MountInfo::load_cpu(&path, CgroupVersion::V1).unwrap();
 
             assert_eq!(mnt_info.root, "/");
             assert_eq!(mnt_info.mount_point, "/sys/fs/cgroup/cpu,cpuacct");
@@ -395,7 +411,7 @@ mod tests {
         fn test_load_subsys() {
             let path = join!(FIXTURES_PROC, "cgroup");
 
-            let subsys = Subsys::load_cpu(path).unwrap();
+            let subsys = Subsys::load_cpu(&path).unwrap();
 
             assert_eq!(subsys.base, "/");
             assert_eq!(subsys.version, CgroupVersion::V1);
@@ -494,7 +510,7 @@ mod tests {
             // test only one optional fields
             let path = join!(FIXTURES_PROC, "mountinfo");
 
-            let mnt_info = MountInfo::load_cpu(path, CgroupVersion::V2).unwrap();
+            let mnt_info = MountInfo::load_cpu(&path, CgroupVersion::V2).unwrap();
 
             assert_eq!(mnt_info.root, "/");
             assert_eq!(mnt_info.mount_point, "/sys/fs/cgroup");
@@ -504,7 +520,7 @@ mod tests {
         fn test_load_subsys() {
             let path = join!(FIXTURES_PROC, "cgroup");
 
-            let subsys = Subsys::load_cpu(path).unwrap();
+            let subsys = Subsys::load_cpu(&path).unwrap();
 
             assert_eq!(subsys.base, "/");
             assert_eq!(subsys.version, CgroupVersion::V2);
@@ -514,7 +530,7 @@ mod tests {
         fn test_load_subsys_multi() {
             let path = join!(FIXTURES_PROC, "cgroup_multi");
 
-            let subsys = Subsys::load_cpu(path).unwrap();
+            let subsys = Subsys::load_cpu(&path).unwrap();
 
             assert_eq!(subsys.base, "/");
             assert_eq!(subsys.version, CgroupVersion::V1);
