@@ -66,32 +66,38 @@ pub fn get_num_physical_cpus() -> usize {
     let mut physid: u32 = 0;
     let mut cores: usize = 0;
     let mut chgcount = 0;
-    for line in reader.lines().filter_map(|result| result.ok()) {
+    for line in reader.lines() {
+        let line = if let Ok(l) = line { l } else { continue };
+
         let mut it = line.split(':');
         let (key, value) = match (it.next(), it.next()) {
             (Some(key), Some(value)) => (key.trim(), value.trim()),
             _ => continue,
         };
-        if key == "physical id" {
-            match value.parse() {
-                Ok(val) => physid = val,
-                Err(_) => break,
-            };
-            chgcount += 1;
+        match key {
+            "physical id" => {
+                match value.parse() {
+                    Ok(val) => physid = val,
+                    Err(_) => break,
+                };
+                chgcount += 1;
+            }
+            "cpu cores" => {
+                match value.parse() {
+                    Ok(val) => cores = val,
+                    Err(_) => break,
+                };
+                chgcount += 1;
+            }
+            _ => (),
         }
-        if key == "cpu cores" {
-            match value.parse() {
-                Ok(val) => cores = val,
-                Err(_) => break,
-            };
-            chgcount += 1;
-        }
+
         if chgcount == 2 {
             map.insert(physid, cores);
             chgcount = 0;
         }
     }
-    let count = map.into_iter().fold(0, |acc, (_, cores)| acc + cores);
+    let count = map.iter().map(|(_, cores)| *cores).sum();
 
     if count == 0 {
         get_num_cpus()
@@ -250,10 +256,16 @@ impl MountInfo {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
-        file.lines()
-            .filter_map(|result| result.ok())
-            .filter_map(MountInfo::parse_line)
-            .find(|mount_info| mount_info.version == version)
+        for line in file.lines() {
+            let mount_info = line.ok().and_then(MountInfo::parse_line);
+
+            if let Some(mount_info) = mount_info {
+                if mount_info.version == version {
+                    return Some(mount_info);
+                }
+            }
+        }
+        None
     }
 
     fn parse_line(line: String) -> Option<MountInfo> {
@@ -305,17 +317,17 @@ impl Subsys {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
-        file.lines()
-            .filter_map(|result| result.ok())
-            .filter_map(Subsys::parse_line)
-            .fold(None, |previous, line| {
-                // already-found v1 trumps v2 since it explicitly specifies its controllers
-                if previous.is_some() && line.version == CgroupVersion::V2 {
-                    return previous;
-                }
+        let mut current = None;
+        for line in file.lines() {
+            let line = line.ok().and_then(Subsys::parse_line);
+            let line = if let Some(l) = line { l } else { continue };
 
-                Some(line)
-            })
+            // v1 trumps v2 since it explicitly specifies its controllers
+            if current.is_none() || line.version == CgroupVersion::V1 {
+                current = Some(line);
+            }
+        }
+        current
     }
 
     fn parse_line(line: String) -> Option<Subsys> {
