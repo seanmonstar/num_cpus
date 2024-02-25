@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::mem;
@@ -62,7 +61,7 @@ pub fn get_num_physical_cpus() -> usize {
         Err(_) => return get_num_cpus(),
     };
     let reader = BufReader::new(file);
-    let mut map = HashMap::new();
+    let mut core_list = Vec::new();
     let mut physid: u32 = 0;
     let mut cores: usize = 0;
     let mut chgcount = 0;
@@ -93,11 +92,20 @@ pub fn get_num_physical_cpus() -> usize {
         }
 
         if chgcount == 2 {
-            map.insert(physid, cores);
+            core_list.push((physid, cores));
             chgcount = 0;
         }
     }
-    let count = map.iter().map(|(_, cores)| *cores).sum();
+
+    core_list.sort_by_key(|&(id, _)| id);
+
+    let mut count = 0;
+    let mut prev = None;
+    for (id, cores) in core_list {
+        if prev == Some(id) { continue }
+        prev = Some(id);
+        count += cores;
+    }
 
     if count == 0 {
         get_num_cpus()
