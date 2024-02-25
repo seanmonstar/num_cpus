@@ -9,13 +9,13 @@ use std::sync::Once;
 use libc;
 
 macro_rules! debug {
-    ($($args:expr),*) => ({
-        if false {
-        //if true {
-            println!($($args),*);
-        }
-    });
+    ($($args:tt)*) => ({});
 }
+// macro_rules! debug {
+//     ($($args:expr),*) => ({
+//         println!($($args),*);
+//     });
+// }
 
 macro_rules! some {
     ($e:expr) => {{
