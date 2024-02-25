@@ -131,7 +131,7 @@ fn init_cgroups() {
         return;
     }
 
-    if let Some(quota) = load_cgroups("/proc/self/cgroup", "/proc/self/mountinfo") {
+    if let Some(quota) = load_cgroups("/proc/self/cgroup".as_ref(), "/proc/self/mountinfo".as_ref()) {
         if quota == 0 {
             return;
         }
@@ -143,11 +143,7 @@ fn init_cgroups() {
     }
 }
 
-fn load_cgroups<P1, P2>(cgroup_proc: P1, mountinfo_proc: P2) -> Option<usize>
-where
-    P1: AsRef<Path>,
-    P2: AsRef<Path>,
-{
+fn load_cgroups(cgroup_proc: &Path, mountinfo_proc: &Path) -> Option<usize> {
     let subsys = some!(Subsys::load_cpu(cgroup_proc));
     let mntinfo = some!(MountInfo::load_cpu(mountinfo_proc, subsys.version));
     let cgroup = some!(Cgroup::translate(mntinfo, subsys));
@@ -250,7 +246,7 @@ impl Cgroup {
 }
 
 impl MountInfo {
-    fn load_cpu<P: AsRef<Path>>(proc_path: P, version: CgroupVersion) -> Option<MountInfo> {
+    fn load_cpu(proc_path: &Path, version: CgroupVersion) -> Option<MountInfo> {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
@@ -305,7 +301,7 @@ impl MountInfo {
 }
 
 impl Subsys {
-    fn load_cpu<P: AsRef<Path>>(proc_path: P) -> Option<Subsys> {
+    fn load_cpu(proc_path: &Path) -> Option<Subsys> {
         let file = some!(File::open(proc_path).ok());
         let file = BufReader::new(file);
 
@@ -369,7 +365,7 @@ mod tests {
             // test only one optional fields
             let path = join!(FIXTURES_PROC, "mountinfo");
 
-            let mnt_info = MountInfo::load_cpu(path, CgroupVersion::V1).unwrap();
+            let mnt_info = MountInfo::load_cpu(&path, CgroupVersion::V1).unwrap();
 
             assert_eq!(mnt_info.root, "/");
             assert_eq!(mnt_info.mount_point, "/sys/fs/cgroup/cpu,cpuacct");
@@ -377,7 +373,7 @@ mod tests {
             // test zero optional field
             let path = join!(FIXTURES_PROC, "mountinfo_zero_opt");
 
-            let mnt_info = MountInfo::load_cpu(path, CgroupVersion::V1).unwrap();
+            let mnt_info = MountInfo::load_cpu(&path, CgroupVersion::V1).unwrap();
 
             assert_eq!(mnt_info.root, "/");
             assert_eq!(mnt_info.mount_point, "/sys/fs/cgroup/cpu,cpuacct");
@@ -385,7 +381,7 @@ mod tests {
             // test multi optional fields
             let path = join!(FIXTURES_PROC, "mountinfo_multi_opt");
 
-            let mnt_info = MountInfo::load_cpu(path, CgroupVersion::V1).unwrap();
+            let mnt_info = MountInfo::load_cpu(&path, CgroupVersion::V1).unwrap();
 
             assert_eq!(mnt_info.root, "/");
             assert_eq!(mnt_info.mount_point, "/sys/fs/cgroup/cpu,cpuacct");
@@ -395,7 +391,7 @@ mod tests {
         fn test_load_subsys() {
             let path = join!(FIXTURES_PROC, "cgroup");
 
-            let subsys = Subsys::load_cpu(path).unwrap();
+            let subsys = Subsys::load_cpu(&path).unwrap();
 
             assert_eq!(subsys.base, "/");
             assert_eq!(subsys.version, CgroupVersion::V1);
@@ -494,7 +490,7 @@ mod tests {
             // test only one optional fields
             let path = join!(FIXTURES_PROC, "mountinfo");
 
-            let mnt_info = MountInfo::load_cpu(path, CgroupVersion::V2).unwrap();
+            let mnt_info = MountInfo::load_cpu(&path, CgroupVersion::V2).unwrap();
 
             assert_eq!(mnt_info.root, "/");
             assert_eq!(mnt_info.mount_point, "/sys/fs/cgroup");
@@ -504,7 +500,7 @@ mod tests {
         fn test_load_subsys() {
             let path = join!(FIXTURES_PROC, "cgroup");
 
-            let subsys = Subsys::load_cpu(path).unwrap();
+            let subsys = Subsys::load_cpu(&path).unwrap();
 
             assert_eq!(subsys.base, "/");
             assert_eq!(subsys.version, CgroupVersion::V2);
@@ -514,7 +510,7 @@ mod tests {
         fn test_load_subsys_multi() {
             let path = join!(FIXTURES_PROC, "cgroup_multi");
 
-            let subsys = Subsys::load_cpu(path).unwrap();
+            let subsys = Subsys::load_cpu(&path).unwrap();
 
             assert_eq!(subsys.base, "/");
             assert_eq!(subsys.version, CgroupVersion::V1);
