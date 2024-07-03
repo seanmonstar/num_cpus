@@ -178,7 +178,7 @@ struct Subsys {
 
 impl Cgroup {
     fn new(version: CgroupVersion, dir: PathBuf) -> Cgroup {
-        Cgroup { version: version, base: dir }
+        Cgroup { version, base: dir }
     }
 
     fn translate(mntinfo: MountInfo, subsys: Subsys) -> Option<Cgroup> {
@@ -297,7 +297,7 @@ impl MountInfo {
         }
 
         Some(MountInfo {
-            version: version,
+            version,
             root: mnt_root.to_owned(),
             mount_point: mnt_point.to_owned(),
         })
@@ -340,7 +340,7 @@ impl Subsys {
         }
 
         fields.next().map(|path| Subsys {
-            version: version,
+            version,
             base: path.to_owned(),
         })
     }
