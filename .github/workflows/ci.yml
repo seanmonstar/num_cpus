@@ -153,7 +153,7 @@ jobs:
       run: |
         docker build -f ci/cgroups/Dockerfile -t num-cpus-cgroups .
         # Test without cgroups
-        docker run -e NUM_CPUS_TEST_GET=2 num-cpus-cgroups
+        docker run -e NUM_CPUS_TEST_GET=4 num-cpus-cgroups
         # Only 1 CPU
         docker run --cpus="1" -e NUM_CPUS_TEST_GET=1 num-cpus-cgroups
         # 1.5 CPUs
