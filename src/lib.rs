@@ -432,6 +432,22 @@ fn get_num_cpus() -> usize {
     unsafe { hermit_abi::get_processor_count() }
 }
 
+#[cfg(feature = "wasm-bindgen-support")]
+extern crate web_sys;
+
+#[cfg(feature = "wasm-bindgen-support")]
+fn get_num_cpus() -> usize {
+    use web_sys::{wasm_bindgen::JsCast, DedicatedWorkerGlobalScope};
+
+    let global = web_sys::js_sys::global();
+
+    // DedicatedWorkerGlobalScope is not always the correct type
+    // but the underlying global will always have access to `navigator`
+    // either way and this was the simplest way to work with `web_sys`.
+    let global = global.unchecked_into::<DedicatedWorkerGlobalScope>();
+    global.navigator().hardware_concurrency() as usize
+}
+
 #[cfg(not(any(
     target_os = "macos",
     target_os = "ios",
@@ -447,6 +463,7 @@ fn get_num_cpus() -> usize {
     target_os = "netbsd",
     target_os = "haiku",
     target_os = "hermit",
+    feature = "wasm-bindgen-support",
     windows,
 )))]
 fn get_num_cpus() -> usize {
