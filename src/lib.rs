@@ -432,6 +432,13 @@ fn get_num_cpus() -> usize {
     unsafe { hermit_abi::get_processor_count() }
 }
 
+#[cfg(target_os = "vxworks")]
+fn get_num_cpus() -> usize {
+    unsafe {
+        libc::vxCpuEnabledGet().count_ones() as usize
+    }
+}
+
 #[cfg(not(any(
     target_os = "macos",
     target_os = "ios",
@@ -447,6 +454,7 @@ fn get_num_cpus() -> usize {
     target_os = "netbsd",
     target_os = "haiku",
     target_os = "hermit",
+    target_os = "vxworks",
     windows,
 )))]
 fn get_num_cpus() -> usize {
